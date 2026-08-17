@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  SCHEME: ThreeOneOSFive
+  TARGET: 3105
   PROJECT: ThreeOneOSFive.xcodeproj
   ARCHIVE_PATH: ${{ github.workspace }}/build/3105.xcarchive
   EXPORT_PATH: ${{ github.workspace }}/build/export
@@ -27,7 +27,7 @@ jobs:
           mkdir -p build
           xcodebuild archive \
             -project "$PROJECT" \
-            -scheme "$SCHEME" \
+            -target "$TARGET" \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$ARCHIVE_PATH" \
