@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET: 3105
+  SCHEME: 3105
   PROJECT: ThreeOneOSFive.xcodeproj
   BUILD_DIR: ${{ github.workspace }}/build/products
   EXPORT_PATH: ${{ github.workspace }}/build/export
@@ -28,9 +28,8 @@ jobs:
           mkdir -p "$BUILD_DIR"
           xcodebuild build \
             -project "$PROJECT" \
-            -target "$TARGET" \
+            -scheme "$SCHEME" \
             -configuration Release \
-            -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             CONFIGURATION_BUILD_DIR="$BUILD_DIR" \
             CODE_SIGNING_ALLOWED=NO \
