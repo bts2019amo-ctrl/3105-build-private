@@ -26,6 +26,7 @@ jobs:
           set -euo pipefail
           rm -rf build
           mkdir -p "$BUILD_DIR"
+          xcodebuild -showBuildSettings -project "$PROJECT" -target "$TARGET" -configuration Release -sdk iphoneos
           xcodebuild build \
             -project "$PROJECT" \
             -target "$TARGET" \
@@ -33,6 +34,8 @@ jobs:
             -sdk iphoneos \
             SWIFT_COMPILATION_MODE=incremental \
             COMPILER_INDEX_STORE_ENABLE=NO \
+            SWIFT_EMIT_LOC_STRINGS=NO \
+            SWIFT_OPTIMIZATION_LEVEL=-Onone \
             CONFIGURATION_BUILD_DIR="$BUILD_DIR" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
