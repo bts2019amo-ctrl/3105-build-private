@@ -9,9 +9,9 @@ permissions:
   contents: read
 
 env:
-  SCHEME: 3105
+  TARGET: 3105
   PROJECT: ThreeOneOSFive.xcodeproj
-  ARCHIVE_PATH: ${{ github.workspace }}/build/3105.xcarchive
+  BUILD_DIR: ${{ github.workspace }}/build/products
   EXPORT_PATH: ${{ github.workspace }}/build/export
 
 jobs:
@@ -21,16 +21,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Archive unsigned app
+      - name: Build unsigned app
         run: |
           set -euo pipefail
-          mkdir -p build
-          xcodebuild archive \
+          rm -rf build
+          mkdir -p "$BUILD_DIR"
+          xcodebuild build \
             -project "$PROJECT" \
-            -scheme "$SCHEME" \
+            -target "$TARGET" \
             -configuration Release \
+            -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            -archivePath "$ARCHIVE_PATH" \
+            CONFIGURATION_BUILD_DIR="$BUILD_DIR" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
@@ -38,7 +40,7 @@ jobs:
       - name: Package unsigned IPA
         run: |
           set -euo pipefail
-          APP_PATH="$ARCHIVE_PATH/Products/Applications/3105.app"
+          APP_PATH="$BUILD_DIR/3105.app"
           test -d "$APP_PATH"
           rm -rf Payload "$EXPORT_PATH"
           mkdir -p Payload "$EXPORT_PATH"
