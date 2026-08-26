@@ -46,6 +46,8 @@ struct ContentView: View {
                     .tag(section.rawValue)
             }
         }
+        .background(Color.clear)
+        .toolbarBackground(.hidden, for: .tabBar)
     }
 
     private var regularLayout: some View {
@@ -64,6 +66,7 @@ struct ContentView: View {
             sectionContent(selectedVisibleSection).id(selectedVisibleSection.rawValue)
         }
         .navigationSplitViewStyle(.balanced)
+        .background(Color.clear)
     }
 
     @ViewBuilder private func sectionContent(_ section: AppSection) -> some View {
@@ -108,6 +111,8 @@ private struct DashboardView: View {
     var body: some View {
         NavigationStack {
             List { deviceSection }
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) { Button { showLogs = true } label: { Image(systemName: "apple.terminal") } }
