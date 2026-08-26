@@ -80,6 +80,7 @@ struct LoginView: View {
                 .frame(maxWidth: .infinity)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             if accessKey.isEmpty { accessKey = savedKey }
             if !savedKey.isEmpty { validate() }
