@@ -6,6 +6,7 @@ struct ThreeOneOSFiveApp: App {
     @StateObject private var patchDraftCoordinator = PatchDraftCoordinator()
     @StateObject private var fileOperationCoordinator = FileOperationCoordinator()
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.english.rawValue
+    @AppStorage("login_authenticated") private var loginAuthenticated = false
 
     private var language: AppLanguage {
         AppLanguage(rawValue: languageCode) ?? .english
@@ -13,18 +14,28 @@ struct ThreeOneOSFiveApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appState)
-                .environmentObject(patchDraftCoordinator)
-                .environmentObject(fileOperationCoordinator)
-                .environment(\.appLanguage, language)
-                .environment(\.locale, language.locale)
-                .onAppear {
-                    appState.detectSupport()
+            Group {
+                if loginAuthenticated {
+                    ContentView()
+                        .environmentObject(appState)
+                        .environmentObject(patchDraftCoordinator)
+                        .environmentObject(fileOperationCoordinator)
+                        .environment(\.appLanguage, language)
+                        .environment(\.locale, language.locale)
+                } else {
+                    LoginView {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            loginAuthenticated = true
+                        }
+                    }
                 }
-                .onOpenURL { url in
-                    patchDraftCoordinator.presentImport(url)
-                }
+            }
+            .onAppear {
+                if loginAuthenticated { appState.detectSupport() }
+            }
+            .onOpenURL { url in
+                patchDraftCoordinator.presentImport(url)
+            }
         }
     }
 }
@@ -48,7 +59,6 @@ class AppState: ObservableObject {
             exploitStatus = .success(method: "Simulator preview")
         }
 #endif
-
         unsupportedMessage = supported ? nil : "iOS \(AppInfo.osVersion) (\(AppInfo.osBuild))"
         if let unsupportedMessage {
             exploitStatus = .unsupported(unsupportedMessage)
