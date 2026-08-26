@@ -1,12 +1,21 @@
 name: Build unsigned IPA
 
+
+
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
 
+
+
+
 permissions:
   contents: read
+
+
+
 
 jobs:
   build:
@@ -17,14 +26,14 @@ jobs:
         run: |
           set -euo pipefail
           brew install xcodegen
-          rm -rf Generated.xcodeproj
-          xcodegen generate --spec project.yml --project Generated.xcodeproj
-          test -d Generated.xcodeproj
+          rm -rf ThreeOneOSFive.xcodeproj Generated.xcodeproj
+          xcodegen generate --spec project.yml
+          test -d ThreeOneOSFive.xcodeproj
       - name: Build unsigned app
         run: |
           set -o pipefail
           xcodebuild build \
-            -project Generated.xcodeproj \
+            -project ThreeOneOSFive.xcodeproj \
             -target 3105 \
             -configuration Release \
             -sdk iphoneos \
@@ -53,3 +62,6 @@ jobs:
             build/export/SHA256SUMS.txt
             build.log
           if-no-files-found: warn
+
+
+
