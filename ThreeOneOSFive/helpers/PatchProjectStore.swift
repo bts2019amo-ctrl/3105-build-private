@@ -334,4 +334,44 @@ final class PatchProjectStore: ObservableObject {
             messageArgument: error.localizationArgument
         )
     }
+
+    @Published private(set) var activePatchIDs: Set<UUID> = []
+
+    func isActive(_ item: PatchLibraryItem) -> Bool {
+        activePatchIDs.contains(item.id)
+    }
+
+    func setEnabled(_ enabled: Bool, for item: PatchLibraryItem) {
+        guard !isBusy else { return }
+        guard !item.isLocked, let project = item.project else {
+            if item.isLocked { requestUnlock(for: item) } else { present(.invalidProject) }
+            return
+        }
+        isBusy = true
+        let projectID = item.id
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                if enabled {
+                    _ = try DevicePatchService.apply(project: project)
+                } else if let receipt = DevicePatchService.latestReceipt(projectID: projectID) {
+                    try DevicePatchService.restore(receipt: receipt)
+                } else {
+                    throw PatchPackageError.invalidProject
+                }
+                await self?.finishToggle(projectID: projectID, enabled: enabled)
+            } catch let error as PatchPackageError {
+                await self?.failOperation(error)
+            } catch {
+                await self?.failOperation(.invalidProject)
+            }
+        }
+    }
+
+    private func finishToggle(projectID: UUID, enabled: Bool) {
+        if enabled { activePatchIDs.insert(projectID) }
+        else { activePatchIDs.remove(projectID) }
+        reload()
+        isBusy = false
+    }
+
 }
