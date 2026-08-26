@@ -162,19 +162,8 @@ struct PatchProjectsView: View {
     @ViewBuilder
     private func itemRow(_ item: PatchLibraryItem) -> some View {
         HStack(spacing: 12) {
-            if item.isLocked {
-                Button { store.requestUnlock(for: item) } label: {
-                    PatchProjectRow(item: item, language: language)
-                }
-                .buttonStyle(.plain)
-            } else {
-                NavigationLink {
-                    PatchProjectDetailView(store: store, projectID: item.id)
-                } label: {
-                    PatchProjectRow(item: item, language: language)
-                }
-                .buttonStyle(.plain)
-            }
+            // A linha é somente informativa; o patch é controlado pelo toggle.
+            PatchProjectRow(item: item, language: language)
             Toggle("", isOn: Binding(
                 get: { store.isActive(item) },
                 set: { store.setActive($0, for: item) }
