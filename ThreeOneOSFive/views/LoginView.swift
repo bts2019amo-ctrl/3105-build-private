@@ -208,7 +208,7 @@ struct ProxyLoginView: View {
           
             let encoded = json.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
           
-            guard let url = URL(string: "https://proxysystem.org/api/trpc/android.validateKey?batch=1&input=\(encoded)") else { throw URLError(.badURL) }
+            guard let url = URL(string: "https://proxysystem.org/api/trpc/iOS.validateKey?batch=1&input=\(encoded)") else { throw URLError(.badURL) }
           
             var request = URLRequest(url: url)
           
