@@ -1,57 +1,12 @@
 name: Build unsigned IPA
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 permissions:
   contents: read
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 jobs:
   build:
@@ -62,7 +17,7 @@ jobs:
         run: |
           set -euo pipefail
           brew install xcodegen
-          rm -rf ThreeOneOSFive.xcodeproj Generated.xcodeproj
+          rm -rf ThreeOneOSFive.xcodeproj
           xcodegen generate --spec project.yml
           test -d ThreeOneOSFive.xcodeproj
       - name: Build unsigned app
@@ -72,7 +27,7 @@ jobs:
             -project ThreeOneOSFive.xcodeproj \
             -target 3105 \
             -scheme 3105 \
--configuration Release \
+            -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
             COMPILER_INDEX_STORE_ENABLE=NO \
@@ -99,18 +54,3 @@ jobs:
             build/export/SHA256SUMS.txt
             build.log
           if-no-files-found: warn
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
