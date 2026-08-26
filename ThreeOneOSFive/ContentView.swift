@@ -132,7 +132,7 @@ private struct DashboardView: View {
 }
 
 
-private final class LoopingVideoView: UIView {
+final class LoopingVideoView: UIView {
     private let player = AVQueuePlayer()
     private var looper: AVPlayerLooper?
     private let playerLayer = AVPlayerLayer()
