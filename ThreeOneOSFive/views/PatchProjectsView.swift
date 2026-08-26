@@ -75,6 +75,7 @@ struct PatchProjectsView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
             }
+            .background(Color.clear)
             .navigationTitle(language.text("patch.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -150,6 +151,8 @@ struct PatchProjectsView: View {
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()
             }
+            .background(Color.clear)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 
