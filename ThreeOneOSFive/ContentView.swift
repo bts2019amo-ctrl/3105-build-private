@@ -40,6 +40,9 @@ struct ContentView: View {
         }
         .tint(AppTheme.accent)
         .imageScale(.small)
+        .background(AppBackgroundView().ignoresSafeArea())
+        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
+        .toolbarColorScheme(.dark, for: .tabBar)
         .onChange(of: patchDraftCoordinator.request?.id) { requestID in
             if requestID != nil { tabNavigation.select(AppSection.patches.rawValue) }
         }
@@ -202,6 +205,9 @@ private struct DashboardView: View {
                 featuresSection
                 signingSection
             }
+            .scrollContentBackground(.hidden)
+            .listStyle(.insetGrouped)
+            .background(Color.clear)
             .navigationBarTitleDisplayMode(.inline)
             .tint(AppTheme.accent)
             .sheet(isPresented: $showSettings) { SettingsView() }
