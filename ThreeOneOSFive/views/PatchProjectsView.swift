@@ -49,21 +49,7 @@ struct PatchProjectsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("HS VIPS")
-                        .font(.system(size: 26, weight: .black, design: .rounded))
-                        .tracking(1.8)
-                        .foregroundStyle(AppTheme.accent)
-                        .shadow(color: AppTheme.accent.opacity(0.55), radius: 12)
-                    Spacer()
-                    Image(systemName: "moon.stars.fill")
-                        .foregroundStyle(AppTheme.accent.opacity(0.9))
-                        .font(.headline)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 8)
-                AppSearchField(
+                    AppSearchField(
                     text: $searchText,
                     prompt: language.text("patch.search"),
                     clearLabel: language.text("common.clear")
