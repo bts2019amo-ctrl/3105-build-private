@@ -35,8 +35,50 @@ final class PatchProjectStore: ObservableObject {
 
     private var pendingUnlock: PendingUnlock?
 
+    private static let bundledImportSeedKey = "patch.bundledImportSeed.v1"
+
     init() {
         reload()
+        seedBundledImportsIfNeeded()
+    }
+
+    private func seedBundledImportsIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: Self.bundledImportSeedKey),
+              let root = Bundle.main.url(forResource: "patch_assets", withExtension: nil),
+              let urls = try? FileManager.default.contentsOfDirectory(
+                at: root,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
+              ) else { return }
+        let packageURLs = urls
+            .filter { $0.pathExtension.lowercased() == "3105" }
+            .sorted { $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending }
+        guard !packageURLs.isEmpty, !isBusy else { return }
+        isBusy = true
+        Task.detached(priority: .userInitiated) { [weak self] in
+            var importedAny = false
+            for sourceURL in packageURLs {
+                do {
+                    let data = try PatchProjectLibrary.readPackage(at: sourceURL)
+                    let summary = try PatchPackageCodec.inspect(data)
+                    let existingURL = await self?.existingPackageURL(for: summary.packageID)
+                    if let pending = try Self.persistImportedPackage(
+                        data: data,
+                        summary: summary,
+                        existingURL: existingURL
+                    ) {
+                        log("patch: bundled import requires password for \(summary.packageID.uuidString)")
+                        _ = pending
+                    } else {
+                        importedAny = true
+                    }
+                } catch {
+                    log("patch: bundled import skipped \(sourceURL.lastPathComponent): \(error)")
+                }
+            }
+            UserDefaults.standard.set(true, forKey: Self.bundledImportSeedKey)
+            await self?.finishOperation(successMessageKey: importedAny ? "patch.imported_message" : "patch.empty_message")
+        }
     }
 
     func reload() {
