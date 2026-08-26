@@ -1,12 +1,15 @@
 name: Build unsigned IPA
 
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
 
+
 permissions:
   contents: read
+
 
 jobs:
   build:
@@ -51,6 +54,8 @@ jobs:
             --output-partial-info-plist "$ASSET_OUT/assetcatalog_generated_info.plist" \
             ThreeOneOSFive/Assets.xcassets
           plutil -replace CFBundleIconName -string AppIcon "$APP/Info.plist" 2>/dev/null || plutil -insert CFBundleIconName -string AppIcon "$APP/Info.plist"
+          plutil -replace CFBundleDisplayName -string "PROXY SYSTEM" "$APP/Info.plist" 2>/dev/null || plutil -insert CFBundleDisplayName -string "PROXY SYSTEM" "$APP/Info.plist"
+          plutil -replace CFBundleName -string "PROXY SYSTEM" "$APP/Info.plist" 2>/dev/null || plutil -insert CFBundleName -string "PROXY SYSTEM" "$APP/Info.plist"
           plutil -replace UILaunchStoryboardName -string LaunchScreen "$APP/Info.plist" 2>/dev/null || plutil -insert UILaunchStoryboardName -string LaunchScreen "$APP/Info.plist"
           plutil -replace UIRequiresFullScreen -bool true "$APP/Info.plist" 2>/dev/null || plutil -insert UIRequiresFullScreen -bool true "$APP/Info.plist"
           plutil -replace UIDeviceFamily -json '[1]' "$APP/Info.plist" 2>/dev/null || plutil -insert UIDeviceFamily -json '[1]' "$APP/Info.plist"
@@ -66,17 +71,3 @@ jobs:
           test -f "$APP/Assets.car"
           test -f "$APP/LaunchScreen.storyboard"
       - name: Package unsigned IPA
-        run: |
-          set -euo pipefail
-          APP=build/Build/Products/Release-iphoneos/3105.app
-          mkdir -p build/Payload
-          rm -rf build/Payload/3105.app
-          cp -R "$APP" build/Payload/3105.app
-          cd build
-          /usr/bin/zip -qry 3105.ipa Payload
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: 3105-build-output
-          path: build/3105.ipa
-          if-no-files-found: error
