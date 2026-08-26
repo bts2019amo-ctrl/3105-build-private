@@ -159,17 +159,28 @@ struct PatchProjectsView: View {
 
     @ViewBuilder
     private func itemRow(_ item: PatchLibraryItem) -> some View {
-        if item.isLocked {
-            Button { store.requestUnlock(for: item) } label: {
-                PatchProjectRow(item: item, language: language)
+        HStack(spacing: 12) {
+            if item.isLocked {
+                Button { store.requestUnlock(for: item) } label: {
+                    PatchProjectRow(item: item, language: language)
+                }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink {
+                    PatchProjectDetailView(store: store, projectID: item.id)
+                } label: {
+                    PatchProjectRow(item: item, language: language)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-        } else {
-            NavigationLink {
-                PatchProjectDetailView(store: store, projectID: item.id)
-            } label: {
-                PatchProjectRow(item: item, language: language)
-            }
+            Toggle("", isOn: Binding(
+                get: { store.isActive(item) },
+                set: { store.setActive($0, for: item) }
+            ))
+            .labelsHidden()
+            .tint(AppTheme.accent)
+            .disabled(item.isLocked || store.isBusy)
+            .accessibilityLabel(item.project?.name ?? language.text("patch.locked_project"))
         }
     }
 
