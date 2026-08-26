@@ -34,7 +34,18 @@ targets:
       - path: ThreeOneOSFive/en.lproj/Localizable.strings
       - path: ThreeOneOSFive/vi.lproj/Localizable.strings
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
-      - path: ThreeOneOSFive/Patches
+      - path: ThreeOneOSFive/120FPS(2)(1).3105
+      - path: ThreeOneOSFive/ALTO(1).3105
+      - path: ThreeOneOSFive/ESPCORPO(1).3105
+      - path: ThreeOneOSFive/Hologramaverde(4)(1).3105
+      - path: ThreeOneOSFive/Hologramaverde(5)(1).3105
+      - path: ThreeOneOSFive/Hologramavermelho(2)(1).3105
+      - path: ThreeOneOSFive/Hologramazul(2)(1).3105
+      - path: ThreeOneOSFive/MAGICA(1).3105
+      - path: ThreeOneOSFive/Magicavatar(2)(1).3105
+      - path: ThreeOneOSFive/PEITO(1).3105
+      - path: ThreeOneOSFive/PESÇOCO(1).3105
+      - path: ThreeOneOSFive/Pescoço+antenaavatar(2)(1).3105
     info:
       path: ThreeOneOSFive/Info.plist
     settings:
