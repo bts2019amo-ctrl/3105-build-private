@@ -254,6 +254,55 @@ final class PatchProjectStore: ObservableObject {
         isBusy = false
     }
 
+    func isActive(_ item: PatchLibraryItem) -> Bool {
+        DevicePatchService.latestReceipt(projectID: item.id) != nil
+    }
+
+    func setActive(_ active: Bool, for item: PatchLibraryItem) {
+        guard !isBusy, !item.isLocked else { return }
+        if active {
+            activate(item)
+        } else {
+            deactivate(item)
+        }
+    }
+
+    private func activate(_ item: PatchLibraryItem) {
+        guard let baseProject = item.project else { return }
+        isBusy = true
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                let project = item.summary.schemaVersion >= 2
+                    ? try PatchProjectLibrary.synchronizeWorkspace(item: item)
+                    : baseProject
+                _ = try DevicePatchService.apply(project: project)
+                await self?.finishOperation(successMessageKey: "patch.applied_message")
+            } catch let error as PatchPackageError {
+                await self?.failOperation(error)
+            } catch {
+                await self?.failOperation(.invalidProject)
+            }
+        }
+    }
+
+    private func deactivate(_ item: PatchLibraryItem) {
+        guard let receipt = DevicePatchService.latestReceipt(projectID: item.id) else {
+            reload()
+            return
+        }
+        isBusy = true
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                try DevicePatchService.restore(receipt: receipt)
+                await self?.finishOperation(successMessageKey: "patch.restored_message")
+            } catch let error as PatchPackageError {
+                await self?.failOperation(error)
+            } catch {
+                await self?.failOperation(.restoreFailed)
+            }
+        }
+    }
+
     func delete(_ item: PatchLibraryItem) {
         do {
             try PatchProjectLibrary.delete(item)
