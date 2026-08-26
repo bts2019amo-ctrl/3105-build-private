@@ -31,6 +31,7 @@ targets:
     resources:
       - path: ThreeOneOSFive/Assets.xcassets
       - path: ThreeOneOSFive/LaunchScreen.storyboard
+- path: ThreeOneOSFive/patch_assets
       - path: ThreeOneOSFive/en.lproj/Localizable.strings
       - path: ThreeOneOSFive/vi.lproj/Localizable.strings
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
