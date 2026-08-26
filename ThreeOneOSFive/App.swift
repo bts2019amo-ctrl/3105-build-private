@@ -30,6 +30,7 @@ struct ThreeOneOSFiveApp: App {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 if loginAuthenticated { appState.detectSupport() }
             }
