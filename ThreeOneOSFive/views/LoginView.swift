@@ -41,6 +41,7 @@ private struct ProxyTRPCResponse: Decodable {
 struct ProxyLoginView: View {
   
     @AppStorage("proxy_access_key") private var storedKey = ""
+    @AppStorage("proxy_days_left") private var proxyDaysLeft = 0
   
     @State private var key = ""
   
@@ -225,6 +226,7 @@ struct ProxyLoginView: View {
             if result.valid {
               
                 storedKey = trimmed
+                proxyDaysLeft = result.daysLeft ?? 0
               
                 showSuccess = true
               
