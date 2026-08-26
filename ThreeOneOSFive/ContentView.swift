@@ -56,7 +56,7 @@ struct ContentView: View {
 
     private var compactLayout: some View {
         TabView(selection: tabSelection) {
-            ForEach(featureVisibility.visibleSections) { section in
+            ForEach([.home, .patches]) { section in
                 sectionContent(section)
                     .tabItem {
                         CompactTabLabel(
@@ -72,7 +72,7 @@ struct ContentView: View {
     private var regularLayout: some View {
         NavigationSplitView {
             List {
-                ForEach(featureVisibility.visibleSections) { section in
+                ForEach([.home, .patches]) { section in
                     Button {
                         withAnimation(.easeInOut(duration: 0.18)) {
                             tabNavigation.select(section.rawValue)
@@ -204,20 +204,6 @@ private struct DashboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .tint(AppTheme.accent)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showLogs = true } label: {
-                        Image(systemName: "apple.terminal")
-                    }
-                    .accessibilityLabel(language.text("accessibility.open_logs"))
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel(language.text("accessibility.open_settings"))
-                }
-            }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showLogs) { LogView() }
         }
