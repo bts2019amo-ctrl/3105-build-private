@@ -34,6 +34,7 @@ targets:
       - path: ThreeOneOSFive/en.lproj/Localizable.strings
       - path: ThreeOneOSFive/vi.lproj/Localizable.strings
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
+      - path: ThreeOneOSFive/Patches
     info:
       path: ThreeOneOSFive/Info.plist
     settings:
