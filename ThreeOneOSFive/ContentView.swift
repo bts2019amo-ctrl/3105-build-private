@@ -17,6 +17,12 @@ struct ContentView: View {
 #else
         _tabNavigation = State(initialValue: AppTabNavigationState())
 #endif
+        UITableView.appearance().backgroundColor = .clear
+        UITableViewCell.appearance().backgroundColor = .clear
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithTransparentBackground()
+        UITabBar.appearance().standardAppearance = tabAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
     }
 
     var body: some View {
@@ -141,6 +147,7 @@ final class LoopingVideoView: UIView {
     private let player = AVQueuePlayer()
     private var looper: AVPlayerLooper?
     private let playerLayer = AVPlayerLayer()
+    private var lifecycleObservers: [NSObjectProtocol] = []
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -151,7 +158,19 @@ final class LoopingVideoView: UIView {
         guard let url = Bundle.main.url(forResource: "pin_background", withExtension: "mp4") else { return }
         looper = AVPlayerLooper(player: player, templateItem: AVPlayerItem(url: url))
         player.isMuted = true
+        lifecycleObservers = [
+            NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.player.pause()
+            },
+            NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.player.play()
+            }
+        ]
         player.play()
+    }
+
+    deinit {
+        lifecycleObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
