@@ -43,6 +43,7 @@ struct ContentView: View {
         .background(AppBackgroundView().ignoresSafeArea())
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
+        .preferredColorScheme(.dark)
         .onChange(of: patchDraftCoordinator.request?.id) { requestID in
             if requestID != nil { tabNavigation.select(AppSection.patches.rawValue) }
         }
