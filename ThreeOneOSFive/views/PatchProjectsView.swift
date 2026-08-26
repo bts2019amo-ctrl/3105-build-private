@@ -15,6 +15,7 @@ struct PatchProjectsView: View {
     @State private var showCreate = false
     @State private var showImporter = false
     @State private var searchText = ""
+    let gameFilter: GamePatchVersion?
 
     private var filteredItems: [PatchLibraryItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -39,18 +40,21 @@ struct PatchProjectsView: View {
     }
 
     private var freeFireNormalItems: [PatchLibraryItem] {
-        filteredItems.filter { item in
+        guard gameFilter == nil || gameFilter == .normal else { return [] }
+        return filteredItems.filter { item in
             item.project?.allBundleIdentifiers.contains("com.dts.freefireth") == true
         }
     }
 
     private var freeFireMaxItems: [PatchLibraryItem] {
-        filteredItems.filter { item in
+        guard gameFilter == nil || gameFilter == .max else { return [] }
+        return filteredItems.filter { item in
             item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true
         }
     }
 
-    init() {
+    init(gameFilter: GamePatchVersion? = nil) {
+        self.gameFilter = gameFilter
 #if targetEnvironment(simulator)
         _showCreate = State(
             initialValue: ProcessInfo.processInfo.arguments.contains("--simulate-patch-editor")
