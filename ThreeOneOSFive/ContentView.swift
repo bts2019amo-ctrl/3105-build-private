@@ -53,7 +53,9 @@ struct ContentView: View {
             }
         }
         .background(Color.clear)
+        .background(VideoBackgroundView().ignoresSafeArea().allowsHitTesting(false))
         .toolbarBackground(.hidden, for: .tabBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
     private var regularLayout: some View {
@@ -127,6 +129,8 @@ private struct DashboardView: View {
                 .sheet(isPresented: $showSettings) { SettingsView() }
                 .sheet(isPresented: $showLogs) { LogView() }
         }
+        .background(Color.clear)
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
     private var deviceSection: some View {
