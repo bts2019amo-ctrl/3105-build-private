@@ -123,7 +123,7 @@ struct ContentView: View {
                 tabSession: filesTabSession
             )
         case .patches:
-            PatchProjectsView()
+            GameSelectionView()
         case .cleaner:
             CleanerView()
         case .wallpapers:
