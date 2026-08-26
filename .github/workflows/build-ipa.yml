@@ -38,6 +38,9 @@ jobs:
         run: |
           set -euo pipefail
           APP=build/Build/Products/Release-iphoneos/3105.app
+
+mkdir -p "$APP/patch_assets"
+cp -f ThreeOneOSFive/patch_assets/* "$APP/patch_assets/"
           ASSET_OUT=build/assetcatalog
           rm -rf "$ASSET_OUT"
           mkdir -p "$ASSET_OUT"
