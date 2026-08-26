@@ -14,6 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          rm -rf ThreeOneOSFive.xcodeproj
+          xcodegen generate --spec project.yml
+          test -d ThreeOneOSFive.xcodeproj
+
       - name: Build unsigned app
         run: |
           set -o pipefail
@@ -28,6 +36,32 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" 2>&1 | tee build.log
+
+      - name: Restore resources into app bundle
+        run: |
+          set -euo pipefail
+          APP=build/Build/Products/Release-iphoneos/3105.app
+          ASSET_OUT=build/assetcatalog
+          rm -rf "$ASSET_OUT"
+          mkdir -p "$ASSET_OUT"
+          xcrun actool \
+            --platform iphoneos \
+            --minimum-deployment-target 16.0 \
+            --target-device iphone \
+            --target-device ipad \
+            --app-icon AppIcon \
+            --compile "$ASSET_OUT" \
+            --output-partial-info-plist "$ASSET_OUT/assetcatalog_generated_info.plist" \
+            ThreeOneOSFive/Assets.xcassets
+          cp -f "$ASSET_OUT/Assets.car" "$APP/Assets.car"
+          for lang in en vi zh-Hans; do
+            mkdir -p "$APP/$lang.lproj"
+            cp -f "ThreeOneOSFive/$lang.lproj/Localizable.strings" "$APP/$lang.lproj/Localizable.strings"
+          done
+          test -f "$APP/Assets.car"
+          test -f "$APP/en.lproj/Localizable.strings"
+          test -f "$APP/vi.lproj/Localizable.strings"
+          test -f "$APP/zh-Hans.lproj/Localizable.strings"
 
       - name: Package IPA
         run: |
