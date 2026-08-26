@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import AVFoundation
 
 struct ContentView: View {
     @Environment(\.appLanguage) private var language
@@ -19,8 +20,13 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Group {
-            if horizontalSizeClass == .regular { regularLayout } else { compactLayout }
+        ZStack {
+            VideoBackgroundView()
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            Group {
+                if horizontalSizeClass == .regular { regularLayout } else { compactLayout }
+            }
         }
         .tint(AppTheme.accent)
         .imageScale(.small)
@@ -123,4 +129,35 @@ private struct DashboardView: View {
             }
         } header: { Text(language.text("common.device")) } footer: { Text(language.text("settings.supported_range_summary")) }
     }
+}
+
+
+private final class LoopingVideoView: UIView {
+    private let player = AVQueuePlayer()
+    private var looper: AVPlayerLooper?
+    private let playerLayer = AVPlayerLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .black
+        playerLayer.player = player
+        playerLayer.videoGravity = .resizeAspectFill
+        layer.addSublayer(playerLayer)
+        guard let url = Bundle.main.url(forResource: "pin_background", withExtension: "mp4") else { return }
+        looper = AVPlayerLooper(player: player, templateItem: AVPlayerItem(url: url))
+        player.isMuted = true
+        player.play()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = bounds
+    }
+}
+
+struct VideoBackgroundView: UIViewRepresentable {
+    func makeUIView(context: Context) -> LoopingVideoView { LoopingVideoView() }
+    func updateUIView(_ uiView: LoopingVideoView, context: Context) {}
 }
