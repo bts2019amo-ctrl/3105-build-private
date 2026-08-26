@@ -33,4 +33,7 @@
             <point key="canvasLocation" x="0.0" y="0.0"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="launch_frame.png" width="828" height="1472"/>
+    </resources>
 </document>
