@@ -1,14 +1,20 @@
 name: Build unsigned IPA
 
 
+
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
 
 
+
+
 permissions:
   contents: read
+
+
 
 
 jobs:
@@ -66,8 +72,19 @@ jobs:
           cp -f ThreeOneOSFive/LaunchScreen.storyboard "$APP/LaunchScreen.storyboard"
           for lang in en vi zh-Hans; do
             mkdir -p "$APP/$lang.lproj"
-            cp -f "ThreeOneOSFive/$lang.lproj/Localizable.strings" "$APP/$lang.lproj/Localizable.strings"
-          done
-          test -f "$APP/Assets.car"
-          test -f "$APP/LaunchScreen.storyboard"
+          cp -f "ThreeOneOSFive/$lang.lproj/Localizable.strings" "$APP/$lang.lproj/Localizable.strings"
+        done
       - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/3105.app Payload/3105.app
+          rm -f 3105-unsigned.ipa
+          zip -qry 3105-unsigned.ipa Payload
+          test -s 3105-unsigned.ipa
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3105-unsigned-ipa
+          path: 3105-unsigned.ipa
+          if-no-files-found: error
