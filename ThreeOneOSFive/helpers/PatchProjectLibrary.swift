@@ -39,6 +39,7 @@ enum PatchProjectLibrary {
     }
 
     static func load(fileManager: FileManager = .default) -> [PatchLibraryItem] {
+        installBundledPackagesIfNeeded(fileManager: fileManager)
         guard let root = try? packageRootURL(fileManager: fileManager),
               let urls = try? fileManager.contentsOfDirectory(
                 at: root,
@@ -79,6 +80,30 @@ enum PatchProjectLibrary {
         }
         return byID.values.sorted {
             ($0.project?.updatedAt ?? .distantPast) > ($1.project?.updatedAt ?? .distantPast)
+        }
+    }
+
+    private static func installBundledPackagesIfNeeded(fileManager: FileManager) {
+        guard let root = try? packageRootURL(fileManager: fileManager) else { return }
+        let bundledURLs = Bundle.main.urls(forResourcesWithExtension: "3105", subdirectory: nil) ?? []
+        for sourceURL in bundledURLs {
+            let destination = root.appendingPathComponent(sourceURL.lastPathComponent)
+            guard !fileManager.fileExists(atPath: destination.path) else { continue }
+            do {
+                let data = try Data(contentsOf: sourceURL, options: .mappedIfSafe)
+                let summary = try PatchPackageCodec.inspect(data)
+                guard !summary.isPasswordProtected else { continue }
+                let decoded = try PatchPackageCodec.decode(data, password: nil)
+                try installImportedPackage(
+                    data: data,
+                    decoded: decoded,
+                    summary: summary,
+                    existingURL: nil,
+                    fileManager: fileManager
+                )
+            } catch {
+                log("patch: skipped bundled package \(sourceURL.lastPathComponent)")
+            }
         }
     }
 
