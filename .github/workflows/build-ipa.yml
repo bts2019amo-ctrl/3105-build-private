@@ -1,60 +1,171 @@
 name: Build unsigned IPA
 
+
+
 on:
+
   workflow_dispatch:
+  
   push:
+  
     branches: [ main ]
+    
+
 
 permissions:
+
   contents: read
+  
+
 
 env:
+
   TARGET: 3105
+  
   PROJECT: ThreeOneOSFive.xcodeproj
+  
   BUILD_DIR: ${{ github.workspace }}/build/products
+  
   EXPORT_PATH: ${{ github.workspace }}/build/export
+  
+
 
 jobs:
+
   build:
+  
     runs-on: macos-15
+    
     steps:
+    
       - name: Checkout
+      
         uses: actions/checkout@v4
+        
+
 
       - name: Build unsigned app
+      
         run: |
+        
           set -euo pipefail
+          
           rm -rf build
+          
           mkdir -p "$BUILD_DIR"
-          xcodebuild -showBuildSettings -project "$PROJECT" -target "$TARGET" -configuration Release -sdk iphoneos
+          
           xcodebuild build \
+          
             -project "$PROJECT" \
+            
             -target "$TARGET" \
+            
             -configuration Release \
+            
             -sdk iphoneos \
+            
             SWIFT_COMPILATION_MODE=incremental \
+            
             COMPILER_INDEX_STORE_ENABLE=NO \
+            
             SWIFT_EMIT_LOC_STRINGS=NO \
+            
             SWIFT_OPTIMIZATION_LEVEL=-Onone \
+            
             CONFIGURATION_BUILD_DIR="$BUILD_DIR" \
+            
             CODE_SIGNING_ALLOWED=NO \
+            
             CODE_SIGNING_REQUIRED=NO \
+            
             CODE_SIGN_IDENTITY=""
+            
+
 
       - name: Package unsigned IPA
+      
         run: |
+        
           set -euo pipefail
+          
           APP_PATH="$BUILD_DIR/3105.app"
+          
           test -d "$APP_PATH"
+          
           rm -rf Payload "$EXPORT_PATH"
+          
           mkdir -p Payload "$EXPORT_PATH"
+          
           cp -R "$APP_PATH" Payload/3105.app
+          
           /usr/bin/zip -qry "$EXPORT_PATH/3105-unsigned.ipa" Payload
+          
+          shasum -a 256 "$EXPORT_PATH/3105-unsigned.ipa" | tee "$EXPORT_PATH/SHA256SUMS.txt"
+          
           rm -rf Payload
+          
+
 
       - name: Upload IPA artifact
+      
         uses: actions/upload-artifact@v4
+        
         with:
+        
           name: 3105-unsigned-ipa
-          path: ${{ env.EXPORT_PATH }}/3105-unsigned.ipa
+          
+          path: |
+          
+            ${{ env.EXPORT_PATH }}/3105-unsigned.ipa
+            
+            ${{ env.EXPORT_PATH }}/SHA256SUMS.txt
+            
           if-no-files-found: error
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
