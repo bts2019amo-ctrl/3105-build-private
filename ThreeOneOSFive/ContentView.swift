@@ -56,7 +56,7 @@ struct ContentView: View {
 
     private var compactLayout: some View {
         TabView(selection: tabSelection) {
-            ForEach([.home, .patches]) { section in
+            ForEach([AppSection.home, AppSection.patches], id: \.self) { section in
                 sectionContent(section)
                     .tabItem {
                         CompactTabLabel(
@@ -72,7 +72,7 @@ struct ContentView: View {
     private var regularLayout: some View {
         NavigationSplitView {
             List {
-                ForEach([.home, .patches]) { section in
+                ForEach([AppSection.home, AppSection.patches], id: \.self) { section in
                     Button {
                         withAnimation(.easeInOut(duration: 0.18)) {
                             tabNavigation.select(section.rawValue)
