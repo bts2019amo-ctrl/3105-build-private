@@ -25,7 +25,6 @@ jobs:
           set -o pipefail
           xcodebuild build \
             -project ThreeOneOSFive.xcodeproj \
-            -target 3105 \
             -scheme 3105 \
             -configuration Release \
             -sdk iphoneos \
