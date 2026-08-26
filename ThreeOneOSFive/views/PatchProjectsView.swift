@@ -65,13 +65,18 @@ struct PatchProjectsView: View {
                     } else {
                         ForEach(filteredItems) { item in
                             itemRow(item)
+                                .padding(.vertical, 6)
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
                         }
                         .onDelete { offsets in
                             offsets.map { filteredItems[$0] }.forEach(store.delete)
                         }
                     }
                 }
+                .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
+                .background(Color.clear)
             }
             .navigationTitle(language.text("patch.title"))
             .navigationBarTitleDisplayMode(.inline)
@@ -224,7 +229,15 @@ private struct PatchProjectRow: View {
                     .accessibilityLabel(language.text("patch.password_protected"))
             }
         }
-        .padding(.vertical, 4)
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(AppTheme.glassStroke, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.18), radius: 14, y: 7)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .animation(.easeInOut(duration: 0.22), value: item.isLocked)
     }
 }
 
