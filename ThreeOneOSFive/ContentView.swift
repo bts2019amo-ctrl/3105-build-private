@@ -195,84 +195,108 @@ private extension AppSection {
 }
 
 private struct DashboardView: View {
-    @Environment(\.appLanguage) private var language
     @EnvironmentObject private var appState: AppState
-    @State private var showSettings = false
-    @State private var showLogs = false
+    @AppStorage("proxy_access_key") private var proxyAccessKey = ""
+    @AppStorage("proxy_days_left") private var proxyDaysLeft = 0
     @Binding var cleanerEnabled: Bool
     @Binding var wallpapersEnabled: Bool
 
+    private var deviceID: String {
+        UIDevice.current.identifierForVendor?.uuidString ?? "NÃO DISPONÍVEL"
+    }
+
+    private var keyDuration: String {
+        proxyDaysLeft == 1 ? "1 DIA" : "\(proxyDaysLeft) DIAS"
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                deviceSection
-                featuresSection
-                signingSection
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("INFORMAÇÕES DA LICENÇA")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+
+                    DashboardInfoCard(rows: [
+                        ("PRODUTO", "EXTERNAL", .white),
+                        ("STATUS DA KEY", "VIP ATIVO", .green),
+                        ("TEMPO DA KEY", keyDuration, .white),
+                        ("EXPIRAÇÃO", proxyDaysLeft > 0 ? "ATIVA" : "AGUARDANDO ATIVAÇÃO", .secondary),
+                        ("CHAVE", proxyAccessKey.isEmpty ? "NÃO DISPONÍVEL" : proxyAccessKey, .secondary),
+                        ("CONTATO", "SUPORTE ONLINE", .white),
+                        ("ID DO DISPOSITIVO", deviceID, .secondary)
+                    ])
+
+                    Text("DISPOSITIVO & COMPATIBILIDADE")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                        .padding(.top, 8)
+
+                    DashboardInfoCard(rows: [
+                        ("MODELO", AppInfo.displayMachineName, .white),
+                        ("VERSÃO IOS", "\(AppInfo.osVersion) (\(AppInfo.osBuild))", .white),
+                        ("ROOT / PMAP", appState.isSupported ? "COMPATÍVEL (SIM)" : "INCOMPATÍVEL", appState.isSupported ? .green : .red)
+                    ])
+
+                    Text("SEGURANÇA & ANTICRACK")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                        .padding(.top, 8)
+
+                    DashboardInfoCard(rows: [
+                        ("ANTI-DEBUGGING", "NÃO VERIFICADA", .secondary),
+                        ("CRIPTOGRAFIA KEYCHAIN", "ATIVA", .green)
+                    ])
+
+                    Text("A key é armazenada no Keychain; a proteção anti-debugging não é declarada como ativa sem uma verificação nativa correspondente.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .padding(.horizontal, 4)
+                        .padding(.top, 6)
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
-            .scrollContentBackground(.hidden)
-            .listStyle(.insetGrouped)
-            .background(Color.clear)
+            .scrollIndicators(.hidden)
+            .background(Color.black.ignoresSafeArea())
+            .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
-            .tint(AppTheme.accent)
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            .sheet(isPresented: $showLogs) { LogView() }
         }
     }
+}
 
-    private var featuresSection: some View {
-        Section {
-            Toggle(isOn: $cleanerEnabled) {
-                Label(language.text("tab.cleaner"), systemImage: "sparkles")
-            }
-            Toggle(isOn: $wallpapersEnabled) {
-                Label(language.text("tab.wallpapers"), systemImage: "photo.on.rectangle.angled")
-            }
-        } header: {
-            Text(language.text("dashboard.features"))
-        } footer: {
-            Text(language.text("dashboard.features_footer"))
-        }
-    }
+private struct DashboardInfoCard: View {
+    let rows: [(String, String, Color)]
 
-    private var signingSection: some View {
-        Section {
-            Label {
-                Text(language.text("dashboard.enterprise_signing"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } icon: {
-                Image(systemName: "checkmark.seal")
-                    .foregroundStyle(AppTheme.accent)
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(row.0)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                    Spacer(minLength: 8)
+                    Text(row.1)
+                        .font(.caption.weight(.bold).monospaced())
+                        .foregroundStyle(row.2)
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                }
+                .padding(.vertical, 13)
+                if index < rows.count - 1 {
+                    Divider().overlay(Color.white.opacity(0.08))
+                }
             }
-            .padding(.vertical, 4)
-        } header: {
-            Text(language.text("dashboard.installation"))
         }
-    }
-
-    private var deviceSection: some View {
-        Section {
-            LabeledContent(language.text("dashboard.hardware_model")) {
-                Text(AppInfo.displayMachineName)
-                    .font(.body.monospaced())
-            }
-            LabeledContent(language.text("settings.ios_version")) {
-                Text("\(AppInfo.osVersion) (\(AppInfo.osBuild))")
-                    .font(.body.monospaced())
-            }
-            HStack {
-                Text(language.text("settings.compatibility"))
-                Spacer()
-                Label(
-                    language.text(appState.isSupported ? "settings.supported" : "settings.unsupported"),
-                    systemImage: appState.isSupported ? "checkmark.circle.fill" : "xmark.circle.fill"
-                )
-                .foregroundStyle(appState.isSupported ? Color.green : Color.red)
-            }
-        } header: {
-            Text(language.text("common.device"))
-        } footer: {
-            Text(language.text("settings.supported_range_summary"))
-        }
+        .padding(.horizontal, 16)
+        .background(Color(red: 0.11, green: 0.11, blue: 0.13), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.white.opacity(0.18), lineWidth: 1))
     }
 }
