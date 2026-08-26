@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var tabNavigation: AppTabNavigationState
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.wallpapersStorageKey) private var wallpapersEnabled = true
+    @AppStorage("proxy_access_key") private var proxyAccessKey = ""
 
     init() {
 #if targetEnvironment(simulator)
@@ -32,7 +33,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
+            if proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                ProxyLoginView()
+            } else if horizontalSizeClass == .regular {
                 regularLayout
             } else {
                 compactLayout
