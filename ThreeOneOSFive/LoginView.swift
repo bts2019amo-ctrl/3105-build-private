@@ -10,6 +10,9 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
+            VideoBackgroundView()
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
             LinearGradient(
                 colors: [Color.black, Color(red: 0.12, green: 0.01, blue: 0.02), Color.black],
                 startPoint: .topLeading,
