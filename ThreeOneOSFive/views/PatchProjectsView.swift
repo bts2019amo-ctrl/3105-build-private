@@ -75,7 +75,6 @@ struct PatchProjectsView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
             }
-            .background(Color.clear)
             .navigationTitle(language.text("patch.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -151,8 +150,6 @@ struct PatchProjectsView: View {
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()
             }
-            .background(Color.clear)
-            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 
@@ -165,8 +162,19 @@ struct PatchProjectsView: View {
     @ViewBuilder
     private func itemRow(_ item: PatchLibraryItem) -> some View {
         HStack(spacing: 12) {
-            // A linha é somente informativa; o patch é controlado pelo toggle.
-            PatchProjectRow(item: item, language: language)
+            if item.isLocked {
+                Button { store.requestUnlock(for: item) } label: {
+                    PatchProjectRow(item: item, language: language)
+                }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink {
+                    PatchProjectDetailView(store: store, projectID: item.id)
+                } label: {
+                    PatchProjectRow(item: item, language: language)
+                }
+                .buttonStyle(.plain)
+            }
             Toggle("", isOn: Binding(
                 get: { store.isActive(item) },
                 set: { store.setActive($0, for: item) }
