@@ -38,6 +38,18 @@ struct PatchProjectsView: View {
         }
     }
 
+    private var freeFireNormalItems: [PatchLibraryItem] {
+        filteredItems.filter { item in
+            item.project?.allBundleIdentifiers.contains("com.dts.freefireth") == true
+        }
+    }
+
+    private var freeFireMaxItems: [PatchLibraryItem] {
+        filteredItems.filter { item in
+            item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true
+        }
+    }
+
     init() {
 #if targetEnvironment(simulator)
         _showCreate = State(
@@ -63,14 +75,36 @@ struct PatchProjectsView: View {
                         searchEmptyState
                             .listRowSeparator(.hidden)
                     } else {
-                        ForEach(filteredItems) { item in
-                            itemRow(item)
-                                .padding(.vertical, 6)
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
+                        if !freeFireNormalItems.isEmpty {
+                            Section {
+                                ForEach(freeFireNormalItems) { item in
+                                    itemRow(item)
+                                        .padding(.vertical, 6)
+                                        .listRowSeparator(.hidden)
+                                        .listRowBackground(Color.clear)
+                                }
+                                .onDelete { offsets in
+                                    offsets.map { freeFireNormalItems[$0] }.forEach(store.delete)
+                                }
+                            } header: {
+                                sectionHeader("FREE FIRE NORMAL")
+                            }
                         }
-                        .onDelete { offsets in
-                            offsets.map { filteredItems[$0] }.forEach(store.delete)
+
+                        if !freeFireMaxItems.isEmpty {
+                            Section {
+                                ForEach(freeFireMaxItems) { item in
+                                    itemRow(item)
+                                        .padding(.vertical, 6)
+                                        .listRowSeparator(.hidden)
+                                        .listRowBackground(Color.clear)
+                                }
+                                .onDelete { offsets in
+                                    offsets.map { freeFireMaxItems[$0] }.forEach(store.delete)
+                                }
+                            } header: {
+                                sectionHeader("FREE FIRE MAX")
+                            }
                         }
                     }
                 }
@@ -132,6 +166,14 @@ struct PatchProjectsView: View {
                 consumeExternalImport()
             }
         }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13, weight: .black, design: .rounded))
+            .foregroundStyle(AppTheme.accent)
+            .textCase(nil)
+            .padding(.top, 8)
     }
 
     private func consumeExternalImport() {
