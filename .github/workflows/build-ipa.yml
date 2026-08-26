@@ -1,27 +1,4 @@
 name: Build unsigned IPA
-
-
-
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-
-
-
-
-permissions:
-  contents: read
-
-
-
-
-jobs:
-  build:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
       - name: Generate Xcode project
         run: |
           set -euo pipefail
@@ -73,7 +50,7 @@ jobs:
           for lang in en vi zh-Hans; do
             mkdir -p "$APP/$lang.lproj"
           cp -f "ThreeOneOSFive/$lang.lproj/Localizable.strings" "$APP/$lang.lproj/Localizable.strings"
-        done
+          done
       - name: Package unsigned IPA
         run: |
           set -euo pipefail
@@ -88,3 +65,4 @@ jobs:
           name: 3105-unsigned-ipa
           path: 3105-unsigned.ipa
           if-no-files-found: error
+
