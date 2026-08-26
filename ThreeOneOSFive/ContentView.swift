@@ -30,7 +30,7 @@ struct ContentView: View {
     }
 
     private var visibleNavigationSections: [AppSection] { [.home, .patches] }
-    private var navigationFeatureVisibility: FeatureVisibility { FeatureVisibility(cleanerEnabled: false, wallpapersEnabled: false, wallpapersSupported: false) }
+    private var navigationFeatureVisibility: FeatureVisibility { FeatureVisibility(cleanerEnabled: false, wallpapersEnabled: false) }
 
     private var compactLayout: some View {
         TabView(selection: tabSelection) {
