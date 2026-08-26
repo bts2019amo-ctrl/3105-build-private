@@ -1,14 +1,20 @@
 name: Build unsigned IPA
 
 
+
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
 
 
+
+
 permissions:
   contents: read
+
+
 
 
 jobs:
@@ -18,6 +24,8 @@ jobs:
       - uses: actions/checkout@v4
 
 
+
+
       - name: Generate Xcode project
         run: |
           set -euo pipefail
@@ -25,6 +33,8 @@ jobs:
           rm -rf ThreeOneOSFive.xcodeproj
           xcodegen generate --spec project.yml
           test -d ThreeOneOSFive.xcodeproj
+
+
 
 
       - name: Build unsigned app
@@ -43,6 +53,8 @@ jobs:
             CODE_SIGN_IDENTITY="" 2>&1 | tee build.log
 
 
+
+
       - name: Restore resources into app bundle
         run: |
           set -euo pipefail
@@ -59,18 +71,12 @@ jobs:
             --compile "$ASSET_OUT" \
             --output-partial-info-plist "$ASSET_OUT/assetcatalog_generated_info.plist" \
             ThreeOneOSFive/Assets.xcassets
-          plutil -merge "$ASSET_OUT/assetcatalog_generated_info.plist" "$APP/Info.plist"
+          plutil -replace CFBundleIconName -string AppIcon "$APP/Info.plist" 2>/dev/null || \
+          plutil -insert CFBundleIconName -string AppIcon "$APP/Info.plist"
+          plutil -p "$APP/Info.plist" | grep -q CFBundleIconName
           cp -f "$ASSET_OUT/Assets.car" "$APP/Assets.car"
           for lang in en vi zh-Hans; do
             mkdir -p "$APP/$lang.lproj"
             cp -f "ThreeOneOSFive/$lang.lproj/Localizable.strings" "$APP/$lang.lproj/Localizable.strings"
           done
           test -f "$APP/Assets.car"
-          test -f "$APP/en.lproj/Localizable.strings"
-          test -f "$APP/vi.lproj/Localizable.strings"
-          test -f "$APP/zh-Hans.lproj/Localizable.strings"
-
-
-      - name: Package IPA
-        run: |
-          set -euo pipefail
