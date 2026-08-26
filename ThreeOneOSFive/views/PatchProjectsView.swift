@@ -49,6 +49,20 @@ struct PatchProjectsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("HS VIPS")
+                        .font(.system(size: 26, weight: .black, design: .rounded))
+                        .tracking(1.8)
+                        .foregroundStyle(AppTheme.accent)
+                        .shadow(color: AppTheme.accent.opacity(0.55), radius: 12)
+                    Spacer()
+                    Image(systemName: "moon.stars.fill")
+                        .foregroundStyle(AppTheme.accent.opacity(0.9))
+                        .font(.headline)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
                 AppSearchField(
                     text: $searchText,
                     prompt: language.text("patch.search"),
@@ -78,7 +92,9 @@ struct PatchProjectsView: View {
                 .listStyle(.insetGrouped)
                 .background(Color.clear)
             }
-            .navigationTitle(language.text("patch.title"))
+            .navigationTitle("HS VIPS")
+            .preferredColorScheme(.dark)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showImporter) {
                 FileDocumentPicker(
@@ -201,6 +217,16 @@ struct PatchProjectsView: View {
     }
 }
 
+private struct HSVIPSPulse: ViewModifier {
+    @State private var isPulsing = false
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPulsing ? 1.01 : 1.0)
+            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
+            .onAppear { isPulsing = true }
+    }
+}
+
 private struct PatchProjectRow: View {
     let item: PatchLibraryItem
     let language: AppLanguage
@@ -208,10 +234,13 @@ private struct PatchProjectRow: View {
     var body: some View {
         HStack(spacing: 12) {
             AppRowIcon(systemName: item.isLocked ? "lock.doc.fill" : "shippingbox.fill")
+                .foregroundStyle(AppTheme.accent)
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.project?.name ?? language.text("patch.locked_project"))
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                     .font(.system(size: 15, weight: .black, design: .rounded))
+                    .textCase(.uppercase)
+                    .foregroundStyle(AppTheme.accent)
+                    .shadow(color: AppTheme.accent.opacity(0.55), radius: 8)
                 Text(item.isLocked
                      ? language.text("patch.tap_to_unlock")
                      : language.text(
@@ -238,6 +267,7 @@ private struct PatchProjectRow: View {
         .shadow(color: .black.opacity(0.18), radius: 14, y: 7)
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .animation(.easeInOut(duration: 0.22), value: item.isLocked)
+        .modifier(HSVIPSPulse())
     }
 }
 
