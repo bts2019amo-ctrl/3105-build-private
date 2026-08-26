@@ -14,7 +14,7 @@
 <key>CFBundleURLTypes</key><array><dict><key>CFBundleURLName</key><string>com.yangjiii.3105.patch-import</string><key>CFBundleURLSchemes</key><array><string>threeoneosfive</string></array></dict></array>
 <key>UTExportedTypeDeclarations</key><array><dict><key>UTTypeConformsTo</key><array><string>public.data</string></array><key>UTTypeDescription</key><string>3105 Patch Package</string><key>UTTypeIdentifier</key><string>com.yangjiii.3105.patch-package</string><key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>3105</string></array><key>public.mime-type</key><string>application/x-3105-patch</string></dict></dict></array>
 <key>LSSupportsOpeningDocumentsInPlace</key><true/><key>UIFileSharingEnabled</key><true/>
-<key>AppReleaseDisplayVersion</key><string>1.0.1</string><key>LSRequiresIPhoneOS</key><true/>
+<key>AppReleaseDisplayVersion</key><string>1.0.1</string><key>LSRequiresIPhoneOS</key><true/><key>UIRequiresFullScreen</key><true/>
 <key>NSPhotoLibraryUsageDescription</key><string>3105 needs access to photos for wallpaper customization.</string>
 <key>NSDocumentsFolderUsageDescription</key><string>3105 needs access to documents.</string>
 <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
@@ -23,3 +23,4 @@
 <key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
 <key>MinimumOSVersion</key><string>16.0</string>
 </dict></plist>
+
