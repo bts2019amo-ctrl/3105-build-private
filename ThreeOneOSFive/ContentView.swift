@@ -34,6 +34,7 @@ struct ContentView: View {
                 if horizontalSizeClass == .regular { regularLayout } else { compactLayout }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tint(AppTheme.accent)
         .imageScale(.small)
         .onChange(of: patchDraftCoordinator.request?.id) { id in if id != nil { tabNavigation.select(AppSection.patches.rawValue) } }
