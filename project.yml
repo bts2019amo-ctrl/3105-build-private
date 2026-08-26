@@ -1,119 +1,43 @@
 name: ThreeOneOSFive
-
 options:
-
   deploymentTarget:
-  
     iOS: "16.0"
-    
   createIntermediateGroups: true
-  
   developmentLanguage: en
-  
 settings:
-
   base:
-  
     SWIFT_VERSION: "5.0"
-    
     IPHONEOS_DEPLOYMENT_TARGET: "16.0"
-    
     PRODUCT_BUNDLE_IDENTIFIER: com.apple.mobile.MobileHouseArrest
-    
     TARGETED_DEVICE_FAMILY: "1,2"
-    
     CODE_SIGNING_ALLOWED: NO
-    
     CODE_SIGNING_REQUIRED: NO
-    
     CODE_SIGN_IDENTITY: ""
-    
     GCC_C_LANGUAGE_STANDARD: gnu17
-    
     CLANG_CXX_LANGUAGE_STANDARD: gnu++20
-    
     ENABLE_USER_SCRIPT_SANDBOXING: NO
-    
     SWIFT_EMIT_LOC_STRINGS: NO
-    
     OTHER_LDFLAGS: "-lz"
-    
 targets:
-
   3105:
-  
     type: application
-    
     platform: iOS
-    
     sources:
-    
       - path: ThreeOneOSFive
-      
         excludes:
-        
           - "Assets.xcassets/**"
-          
           - "Info.plist"
-          
           - "**/*.lproj/**"
-          
     resources:
-    
       - path: ThreeOneOSFive/Assets.xcassets
-      
+      - path: ThreeOneOSFive/LaunchScreen.storyboard
       - path: ThreeOneOSFive/en.lproj/Localizable.strings
-      
       - path: ThreeOneOSFive/vi.lproj/Localizable.strings
-      
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
-      
     info:
-    
       path: ThreeOneOSFive/Info.plist
-      
     settings:
-    
       base:
-      
         SWIFT_OBJC_BRIDGING_HEADER: ThreeOneOSFive/ThreeOneOSFive-Bridging-Header.h
-        
         GENERATE_INFOPLIST_FILE: NO
-        
         PRODUCT_NAME: 3105
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
