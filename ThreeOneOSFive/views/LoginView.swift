@@ -72,14 +72,6 @@ struct ProxyLoginView: View {
                   
                         .shadow(color: AppTheme.accent.opacity(0.55), radius: 18)
                   
-                    Text("HS VIPS")
-                  
-                        .font(.system(size: 34, weight: .black, design: .rounded))
-                  
-                        .tracking(2)
-                  
-                        .foregroundStyle(.white)
-                  
                     Text("PROXY SYSTEM")
                   
                         .font(.headline)
@@ -218,8 +210,12 @@ struct ProxyLoginView: View {
           
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
           
-            let (data, response) = try await URLSession.shared.data(for: request)
-          
+            var (data, response) = try await URLSession.shared.data(for: request)
+            if (response as? HTTPURLResponse)?.statusCode == 404 {
+              guard let fallbackURL = URL(string: "https://proxysystem.org/api/trpc/android.validateKey?batch=1&input=\(encoded)") else { throw URLError(.badURL) }
+              request.url = fallbackURL
+              (data, response) = try await URLSession.shared.data(for: request)
+            }
             guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
           
             let result = try JSONDecoder().decode([ProxyTRPCResponse].self, from: data).first?.result.data.json
