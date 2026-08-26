@@ -56,6 +56,7 @@ struct PatchProjectsView: View {
                 )
                 Divider()
                 List {
+                        BundledPatchAssetsSection()
                     if store.items.isEmpty && !store.isBusy {
                         emptyState
                             .listRowSeparator(.hidden)
