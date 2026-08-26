@@ -3,6 +3,18 @@ name: Build unsigned IPA
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 on:
   workflow_dispatch:
   push:
@@ -11,8 +23,32 @@ on:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 permissions:
   contents: read
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -35,7 +71,8 @@ jobs:
           xcodebuild build \
             -project ThreeOneOSFive.xcodeproj \
             -target 3105 \
-            -configuration Release \
+            -scheme 3105 \
+-configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
             COMPILER_INDEX_STORE_ENABLE=NO \
@@ -62,6 +99,18 @@ jobs:
             build/export/SHA256SUMS.txt
             build.log
           if-no-files-found: warn
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
