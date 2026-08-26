@@ -18,6 +18,7 @@ struct LoginView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .opacity(0.38)
             .ignoresSafeArea()
 
             ScrollView {
