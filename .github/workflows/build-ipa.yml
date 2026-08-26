@@ -1,22 +1,10 @@
 name: Build unsigned IPA
-
-
-
-
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-
-
-
-
 permissions:
   contents: read
-
-
-
-
 jobs:
   build:
     runs-on: macos-15
@@ -32,59 +20,29 @@ jobs:
       - name: Build unsigned app
         run: |
           set -o pipefail
-          xcodebuild build \
-            -project ThreeOneOSFive.xcodeproj \
-            -scheme 3105 \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath build \
-            COMPILER_INDEX_STORE_ENABLE=NO \
-            SWIFT_EMIT_LOC_STRINGS=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" 2>&1 | tee build.log
+          xcodebuild build -project ThreeOneOSFive.xcodeproj -scheme 3105 -configuration Release -sdk iphoneos -derivedDataPath build COMPILER_INDEX_STORE_ENABLE=NO SWIFT_EMIT_LOC_STRINGS=NO CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 2>&1 | tee build.log
       - name: Restore resources and full-screen metadata
         run: |
           set -euo pipefail
           APP=build/Build/Products/Release-iphoneos/3105.app
+          test -d "$APP"
           mkdir -p "$APP/patch_assets"
-          cp -f ThreeOneOSFive/patch_assets/* "$APP/patch_assets/"
-          cp -f ThreeOneOSFive/patch_assets/launch_frame.png "$APP/launch_frame.png"
-          ASSET_OUT=build/assetcatalog
-          rm -rf "$ASSET_OUT"
-          mkdir -p "$ASSET_OUT"
-          xcrun actool \
-            --platform iphoneos \
-            --minimum-deployment-target 16.0 \
-            --target-device iphone \
-            --target-device ipad \
-            --app-icon AppIcon \
-            --compile "$ASSET_OUT" \
-            --output-partial-info-plist "$ASSET_OUT/assetcatalog_generated_info.plist" \
-            ThreeOneOSFive/Assets.xcassets
-          plutil -replace CFBundleIconName -string AppIcon "$APP/Info.plist" 2>/dev/null || plutil -insert CFBundleIconName -string AppIcon "$APP/Info.plist"
-          plutil -replace UILaunchStoryboardName -string LaunchScreen "$APP/Info.plist" 2>/dev/null || plutil -insert UILaunchStoryboardName -string LaunchScreen "$APP/Info.plist"
-          plutil -replace UIRequiresFullScreen -bool true "$APP/Info.plist" 2>/dev/null || plutil -insert UIRequiresFullScreen -bool true "$APP/Info.plist"
-          plutil -replace UIDeviceFamily -json '[1]' "$APP/Info.plist" 2>/dev/null || plutil -insert UIDeviceFamily -json '[1]' "$APP/Info.plist"
-          plutil -replace UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' "$APP/Info.plist" 2>/dev/null || plutil -insert UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' "$APP/Info.plist"
-          plutil -replace UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes":false}' "$APP/Info.plist" 2>/dev/null || plutil -insert UIApplicationSceneManifest -json '{"UIApplicationSupportsMultipleScenes":false}' "$APP/Info.plist"
-          plutil -p "$APP/Info.plist"
-          cp -f "$ASSET_OUT/Assets.car" "$APP/Assets.car"
-          cp -f ThreeOneOSFive/LaunchScreen.storyboard "$APP/LaunchScreen.storyboard"
-          for lang in en vi zh-Hans; do
+          cp -R ThreeOneOSFive/patch_assets/. "$APP/patch_assets/"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Set :UILaunchStoryboardName LaunchScreen" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Set :UIRequiresFullScreen YES" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Set :UIDeviceFamily:0 1" "$APP/Info.plist" || true
       - name: Package unsigned IPA
         run: |
           set -euo pipefail
-          APP=build/Build/Products/Release-iphoneos/3105.app
-          mkdir -p build/Payload
-          rm -rf build/Payload/3105.app
-          cp -R "$APP" build/Payload/3105.app
-          cd build
-          /usr/bin/zip -qry 3105.ipa Payload
-
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/3105.app Payload/3105.app
+          rm -f 3105-unsigned.ipa
+          zip -qry 3105-unsigned.ipa Payload
+          test -s 3105-unsigned.ipa
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 3105-build-output
-          path: build/3105.ipa
+          name: 3105-unsigned-ipa
+          path: 3105-unsigned.ipa
           if-no-files-found: error
