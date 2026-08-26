@@ -8,8 +8,10 @@ enum AppTheme {
                 : UIColor(red: 0.85, green: 0.42, blue: 0.20, alpha: 1.00)
         }
     )
-    static let pageBackground = Color(uiColor: .systemBackground)
-    static let consoleBackground = Color(uiColor: .secondarySystemBackground)
+    static let pageBackground = Color.clear
+    static let consoleBackground = Color.clear
+    static let glassFill = Color.white.opacity(0.14)
+    static let glassStroke = Color.white.opacity(0.28)
     static let pageInset: CGFloat = 16
     static let rowIconSize: CGFloat = 17
     static let rowIconFrame: CGFloat = 28
@@ -19,6 +21,19 @@ enum AppTheme {
     static let appIconSize: CGFloat = 32
     static let emptyIconSize: CGFloat = 30
     static let selectionIconSize: CGFloat = 18
+}
+
+struct AppBackgroundView: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(red: 0.03, green: 0.05, blue: 0.14), Color(red: 0.10, green: 0.05, blue: 0.22), Color(red: 0.02, green: 0.16, blue: 0.24)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
+            Circle().fill(Color.cyan.opacity(0.24)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
+            Circle().fill(Color.purple.opacity(0.22)).frame(width: 300, height: 300).blur(radius: 70).offset(x: -150, y: 270)
+            Color.black.opacity(0.08).ignoresSafeArea()
+        }
+        .allowsHitTesting(false)
+    }
 }
 
 struct AppRowIcon: View {
