@@ -13,13 +13,7 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Generate clean Xcode project
-        run: |
-          set -euo pipefail
-          brew install xcodegen
-          rm -rf ThreeOneOSFive.xcodeproj
-          xcodegen generate --spec project.yml
-          test -d ThreeOneOSFive.xcodeproj
+
       - name: Build unsigned app
         run: |
           set -o pipefail
@@ -34,15 +28,18 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" 2>&1 | tee build.log
+
       - name: Package IPA
         run: |
           set -euo pipefail
           test -d build/Build/Products/Release-iphoneos/3105.app
+          test -f build/Build/Products/Release-iphoneos/3105.app/Assets.car
           rm -rf Payload build/export
           mkdir -p Payload build/export
           cp -R build/Build/Products/Release-iphoneos/3105.app Payload/3105.app
           /usr/bin/zip -qry build/export/3105-unsigned.ipa Payload
           shasum -a 256 build/export/3105-unsigned.ipa | tee build/export/SHA256SUMS.txt
+
       - name: Upload output
         if: always()
         uses: actions/upload-artifact@v4
