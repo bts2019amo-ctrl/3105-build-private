@@ -298,7 +298,7 @@ private struct PatchProjectRow: View {
             AppRowIcon(systemName: item.isLocked ? "lock.doc.fill" : "shippingbox.fill")
                 .foregroundStyle(AppTheme.accent)
             VStack(alignment: .leading, spacing: 3) {
-                Text(item.project?.name ?? language.text("patch.locked_project"))
+                Text(item.displayName.isEmpty ? language.text("patch.locked_project") : item.displayName)
                      .font(.system(size: 15, weight: .black, design: .rounded))
                     .textCase(.uppercase)
                     .foregroundStyle(AppTheme.accent)
