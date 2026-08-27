@@ -15,6 +15,7 @@ struct PatchProjectsView: View {
     @State private var showCreate = false
     @State private var showImporter = false
     @State private var searchText = ""
+    @State private var hasStartedInitialSync = false
     let gameFilter: GamePatchVersion?
 
     private var filteredItems: [PatchLibraryItem] {
@@ -141,10 +142,11 @@ struct PatchProjectsView: View {
                     Button {
                         store.synchronizeRemote()
                     } label: {
-                        Image(systemName: store.isBusy ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
+                        Image(systemName: store.isSyncing ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
                     }
                     .accessibilityLabel("Sincronizar patches online")
-                    .disabled(store.isBusy)
+                    .symbolEffect(.rotate, isActive: store.isSyncing)
+                    .disabled(store.isSyncing)
                 }
             }
             .sheet(isPresented: $showImporter) {
@@ -194,6 +196,8 @@ struct PatchProjectsView: View {
             }
             .onAppear {
                 consumeExternalImport()
+                guard !hasStartedInitialSync else { return }
+                hasStartedInitialSync = true
                 store.synchronizeRemote()
             }
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
@@ -238,7 +242,7 @@ struct PatchProjectsView: View {
             .labelsHidden()
             .toggleStyle(PremiumLiquidGlassToggleStyle())
             .tint(AppTheme.accent)
-            .disabled(store.isBusy)
+            .disabled(store.isApplyingPatchIDs.contains(item.id))
         }
         .padding(.vertical, 6)
         .contentShape(Rectangle())
