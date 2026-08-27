@@ -1,55 +1,173 @@
 name: ThreeOneOSFive
+
+
+
 options:
+
   deploymentTarget:
+  
     iOS: "16.0"
+    
   createIntermediateGroups: true
+  
   developmentLanguage: en
+  
+
+
 settings:
+
   base:
+  
     SWIFT_VERSION: "5.0"
+    
     IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    
     PRODUCT_BUNDLE_IDENTIFIER: com.apple.mobile.MobileHouseArrest
+    
     TARGETED_DEVICE_FAMILY: "1,2"
+    
     CODE_SIGNING_ALLOWED: NO
+    
     CODE_SIGNING_REQUIRED: NO
+    
     CODE_SIGN_IDENTITY: ""
+    
     GCC_C_LANGUAGE_STANDARD: gnu17
+    
     CLANG_CXX_LANGUAGE_STANDARD: gnu++20
+    
     ENABLE_USER_SCRIPT_SANDBOXING: NO
+    
     SWIFT_EMIT_LOC_STRINGS: NO
+    
     OTHER_LDFLAGS: "-lz"
+    
+
+
 targets:
+
   3105:
+  
     type: application
+    
     platform: iOS
+    
     sources:
+    
       - path: ThreeOneOSFive
-        excludes:
-          - "Assets.xcassets/**"
-          - "Info.plist"
-          - "**/*.lproj/**"
+      
+    excludes:
+    
+      - "Assets.xcassets/**"
+      
+      - "Info.plist"
+      
+      - "**/*.lproj/**"
+      
     resources:
+    
       - path: ThreeOneOSFive/Assets.xcassets
+      
       - path: ThreeOneOSFive/LaunchScreen.storyboard
+      
       - path: ThreeOneOSFive/en.lproj/Localizable.strings
+      
       - path: ThreeOneOSFive/vi.lproj/Localizable.strings
+      
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
-      - path: ThreeOneOSFive/120FPS(2)(1).3105
-      - path: ThreeOneOSFive/ALTO(1).3105
-      - path: ThreeOneOSFive/ESPCORPO(1).3105
-      - path: ThreeOneOSFive/Hologramaverde(4)(1).3105
-      - path: ThreeOneOSFive/Hologramaverde(5)(1).3105
-      - path: ThreeOneOSFive/Hologramavermelho(2)(1).3105
-      - path: ThreeOneOSFive/Hologramazul(2)(1).3105
-      - path: ThreeOneOSFive/MAGICA(1).3105
-      - path: ThreeOneOSFive/Magicavatar(2)(1).3105
-      - path: ThreeOneOSFive/PEITO(1).3105
-      - path: ThreeOneOSFive/PESÇOCO(1).3105
-      - path: ThreeOneOSFive/Pescoço+antenaavatar(2)(1).3105
+      
+      - path: ThreeOneOSFive/ALTO(3).3105
+      
+      - path: ThreeOneOSFive/ESPCORPO(2).3105
+      
+      - path: ThreeOneOSFive/PEITO(3).3105
+      
+      - path: ThreeOneOSFive/MAGICA(2).3105
+      
+      - path: ThreeOneOSFive/PESCOCO(3).3105
+      
+      - path: ThreeOneOSFive/Hologramazul(2)(2).3105
+      
+      - path: ThreeOneOSFive/ALTO(2).3105
+      
+      - path: ThreeOneOSFive/PEITO(2).3105
+      
+      - path: ThreeOneOSFive/120FPS(2)(2).3105
+      
+      - path: ThreeOneOSFive/PESÇOCO(2).3105
+      
+      - path: ThreeOneOSFive/PESÇOCO(3).3105
+      
+      - path: ThreeOneOSFive/Hologramavermelho(2)(2).3105
+      
+      - path: ThreeOneOSFive/Hologramaverde(5)(2).3105
+      
+      - path: ThreeOneOSFive/Hologramaverde(4)(2).3105
+      
     info:
+    
       path: ThreeOneOSFive/Info.plist
+      
     settings:
+    
       base:
+      
         SWIFT_OBJC_BRIDGING_HEADER: ThreeOneOSFive/ThreeOneOSFive-Bridging-Header.h
+        
         GENERATE_INFOPLIST_FILE: NO
+        
         PRODUCT_NAME: 3105
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
