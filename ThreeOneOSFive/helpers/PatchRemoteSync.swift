@@ -39,7 +39,7 @@ enum PatchRemoteSyncError: LocalizedError {
 
 enum PatchRemoteSync {
     // Public HTTPS endpoint of the PROXY SYSTEM Patch Panel.
-    static let manifestURL = URL(string: "https://3000-i979rz53mz9tlhsrk1hgt-449eb201.us3.manus.computer/manifest.json")!
+    static let manifestURL = URL(string: "https://proxypatch-5pmh6tcn.manus.space/manifest.json")!
     static let maxPatchBytes = 25 * 1024 * 1024
     static let cachedManifestName = "remote-manifest.json"
 
