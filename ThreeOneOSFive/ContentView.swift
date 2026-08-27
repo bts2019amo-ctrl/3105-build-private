@@ -7,7 +7,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
-    @State private var tabNAVavigation: AppTabNavigationState
+    @State private var tabNavigation: AppTabNavigationState
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.wallpapersStorageKey) private var wallpapersEnabled = true
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
