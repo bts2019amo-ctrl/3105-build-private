@@ -56,16 +56,16 @@ targets:
     
       - path: ThreeOneOSFive
       
-    excludes:
-    
-      - "Assets.xcassets/**"
-      
-      - "Info.plist"
-      
-      - "**/*.lproj/**"
-      
-      - "**/*.3105"
-      
+        excludes:
+        
+          - "Assets.xcassets/**"
+          
+          - "Info.plist"
+          
+          - "**/*.lproj/**"
+          
+          - "**/*.3105"
+          
     resources:
     
       - path: ThreeOneOSFive/Assets.xcassets
@@ -80,6 +80,8 @@ targets:
       
       - path: ThreeOneOSFive/Patches
       
+        type: folder
+        
     info:
     
       path: ThreeOneOSFive/Info.plist
@@ -94,6 +96,7 @@ targets:
         
         PRODUCT_NAME: 3105
         
+
 
 
 
