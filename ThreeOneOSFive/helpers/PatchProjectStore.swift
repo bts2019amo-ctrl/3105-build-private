@@ -24,6 +24,7 @@ struct PatchStoreAlert: Identifiable {
 final class PatchProjectStore: ObservableObject {
     @Published private(set) var items: [PatchLibraryItem] = []
     @Published private(set) var isBusy = false
+    @Published private(set) var isMaintenanceMode = false
     @Published var passwordRequest: PatchPasswordRequest?
     @Published var alert: PatchStoreAlert?
 
@@ -41,6 +42,7 @@ final class PatchProjectStore: ObservableObject {
 
     func reload() {
         items = PatchProjectLibrary.load()
+        isMaintenanceMode = UserDefaults.standard.bool(forKey: "proxy_system_patches_maintenance")
     }
 
     func synchronizeRemote() {
