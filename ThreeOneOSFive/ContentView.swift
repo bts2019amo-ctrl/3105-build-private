@@ -7,7 +7,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
-    @State private var tabNavigation: AppTabNavigationState
+    @State private var tabNAVavigation: AppTabNavigationState
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.wallpapersStorageKey) private var wallpapersEnabled = true
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
@@ -39,6 +39,8 @@ struct ContentView: View {
         Group {
             if appState.isSecurityCompromised {
                 SecurityBlockedView()
+            } else if appState.isCheckingStoredKey {
+                KeyValidationView()
             } else if appState.isKeySessionInvalidated || proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isKeyExpired {
                 ProxyLoginView()
             } else if horizontalSizeClass == .regular {
@@ -54,20 +56,27 @@ struct ContentView: View {
         .toolbarColorScheme(.dark, for: .tabBar)
         .preferredColorScheme(.dark)
         .task {
-            appState.revalidateStoredKey()
+            appState.revalidateStoredKey(isInitial: true)
+            var secondsSinceRevalidation = 0
+
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { break }
+
                 let now = Date()
                 clock = now
+                secondsSinceRevalidation += 1
 
                 if proxyKeyExpiresAt > 0 && proxyKeyExpiresAt <= now.timeIntervalSince1970 {
                     appState.invalidateKeySession()
+                    secondsSinceRevalidation = 0
                     continue
                 }
 
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                guard !Task.isCancelled else { break }
-                appState.revalidateStoredKey()
+                if secondsSinceRevalidation >= 5 {
+                    secondsSinceRevalidation = 0
+                    appState.revalidateStoredKey()
+                }
             }
         }
         .onChange(of: scenePhase) { phase in
@@ -246,8 +255,7 @@ private struct DashboardView: View {
         let hours = (totalSeconds % 86_400) / 3_600
         let minutes = (totalSeconds % 3_600) / 60
         let seconds = totalSeconds % 60
-        if days > 0 { return "\(days)d \(hours)h \(minutes)m" }
-        return String(format: "%02dh %02dm %02ds", hours, minutes, seconds)
+        return String(format: "%dd %02dh %02dm %02ds", days, hours, minutes, seconds)
     }
 
     var body: some View {
@@ -307,6 +315,22 @@ private struct DashboardView: View {
             .background(Color.black.ignoresSafeArea())
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+private struct KeyValidationView: View {
+    var body: some View {
+        ZStack {
+            AppBackgroundView().ignoresSafeArea()
+            VStack(spacing: 16) {
+                ProgressView().controlSize(.large).tint(AppTheme.accent)
+                Text("VALIDANDO CHAVE SALVA").font(.system(size: 13, weight: .bold, design: .rounded)).tracking(1.1).foregroundStyle(.white.opacity(0.78))
+                Text("Verificando sua licença com segurança…").font(.footnote).foregroundStyle(.secondary)
+            }
+            .padding(28)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(AppTheme.glassStroke, lineWidth: 1))
         }
     }
 }
