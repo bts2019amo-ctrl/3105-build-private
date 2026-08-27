@@ -65,9 +65,6 @@ targets:
           - "**/*.lproj/**"
           
           - "**/*.3105"
-      - path: ThreeOneOSFive/Patches
-        type: folder
-        buildPhase: resources
           
     resources:
     
@@ -80,7 +77,12 @@ targets:
       - path: ThreeOneOSFive/vi.lproj/Localizable.strings
       
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
-info:
+      
+      - path: ThreeOneOSFive/Patches
+      
+        type: folder
+        
+    info:
     
       path: ThreeOneOSFive/Info.plist
       
