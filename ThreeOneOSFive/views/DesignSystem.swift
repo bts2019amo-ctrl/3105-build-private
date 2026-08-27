@@ -1,13 +1,20 @@
 import SwiftUI
 
 enum AppTheme {
-    static let accent = Color(
-        uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 1.00, green: 0.23, blue: 0.20, alpha: 1.00)
-                : UIColor(red: 0.82, green: 0.10, blue: 0.08, alpha: 1.00)
+    static let themeColorKey = "proxy_system_theme_color"
+
+    static var accent: Color {
+        if let stored = UserDefaults.standard.string(forKey: themeColorKey),
+           let number = UInt64(stored.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: ""), radix: 16),
+           stored.trimmingCharacters(in: .whitespacesAndNewlines).count == 6 {
+            return Color(
+                red: Double((number >> 16) & 0xFF) / 255,
+                green: Double((number >> 8) & 0xFF) / 255,
+                blue: Double(number & 0xFF) / 255
+            )
         }
-    )
+        return Color(red: 1.00, green: 0.23, blue: 0.20)
+    }
     static let pageBackground = Color.clear
     static let consoleBackground = Color.clear
     static let glassFill = Color.white.opacity(0.14)
