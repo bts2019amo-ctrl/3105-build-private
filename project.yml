@@ -76,33 +76,7 @@ targets:
       
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
       
-      - path: ThreeOneOSFive/ALTO(3).3105
-      
-      - path: ThreeOneOSFive/ESPCORPO(2).3105
-      
-      - path: ThreeOneOSFive/PEITO(3).3105
-      
-      - path: ThreeOneOSFive/MAGICA(2).3105
-      
-      - path: ThreeOneOSFive/PESCOCO(3).3105
-      
-      - path: ThreeOneOSFive/Hologramazul(2)(2).3105
-      
-      - path: ThreeOneOSFive/ALTO(2).3105
-      
-      - path: ThreeOneOSFive/PEITO(2).3105
-      
-      - path: ThreeOneOSFive/120FPS(2)(2).3105
-      
-      - path: ThreeOneOSFive/PESÇOCO(2).3105
-      
-      - path: ThreeOneOSFive/PESÇOCO(3).3105
-      
-      - path: ThreeOneOSFive/Hologramavermelho(2)(2).3105
-      
-      - path: ThreeOneOSFive/Hologramaverde(5)(2).3105
-      
-      - path: ThreeOneOSFive/Hologramaverde(4)(2).3105
+      - path: ThreeOneOSFive/Patches
       
     info:
     
@@ -118,19 +92,6 @@ targets:
         
         PRODUCT_NAME: 3105
         
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
