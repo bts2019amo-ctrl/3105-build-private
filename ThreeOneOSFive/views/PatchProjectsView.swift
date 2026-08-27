@@ -176,7 +176,10 @@ struct PatchProjectsView: View {
                     dismissButton: .default(Text(language.text("common.ok")))
                 )
             }
-            .onAppear(perform: consumeExternalImport)
+            .onAppear {
+                consumeExternalImport()
+                store.synchronizeRemote()
+            }
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()
             }
