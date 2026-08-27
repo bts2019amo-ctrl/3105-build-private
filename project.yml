@@ -78,10 +78,6 @@ targets:
       
       - path: ThreeOneOSFive/zh-Hans.lproj/Localizable.strings
       
-      - path: ThreeOneOSFive/Patches
-      
-        type: folder
-        
     info:
     
       path: ThreeOneOSFive/Info.plist
