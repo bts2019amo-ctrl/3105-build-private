@@ -3,12 +3,15 @@ import UIKit
 
 struct ContentView: View {
     @Environment(\.appLanguage) private var language
+    @EnvironmentObject private var appState: AppState
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
     @State private var tabNavigation: AppTabNavigationState
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.wallpapersStorageKey) private var wallpapersEnabled = true
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
+    @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
+    @State private var clock = Date()
 
     init() {
 #if targetEnvironment(simulator)
@@ -33,7 +36,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if appState.isSecurityCompromised {
+                SecurityBlockedView()
+            } else if proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isKeyExpired {
                 ProxyLoginView()
             } else if horizontalSizeClass == .regular {
                 regularLayout
@@ -47,6 +52,12 @@ struct ContentView: View {
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
         .preferredColorScheme(.dark)
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                clock = Date()
+            }
+        }
         .onChange(of: patchDraftCoordinator.request?.id) { requestID in
             if requestID != nil { tabNavigation.select(AppSection.patches.rawValue) }
         }
@@ -145,6 +156,10 @@ struct ContentView: View {
         )
     }
 
+    private var isKeyExpired: Bool {
+        proxyKeyExpiresAt > 0 && proxyKeyExpiresAt <= clock.timeIntervalSince1970
+    }
+
     private var featureVisibility: FeatureVisibility {
         FeatureVisibility(
             cleanerEnabled: cleanerEnabled,
@@ -198,6 +213,7 @@ private struct DashboardView: View {
     @EnvironmentObject private var appState: AppState
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
     @AppStorage("proxy_days_left") private var proxyDaysLeft = 0
+    @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
     @Binding var cleanerEnabled: Bool
     @Binding var wallpapersEnabled: Bool
 
@@ -206,7 +222,14 @@ private struct DashboardView: View {
     }
 
     private var keyDuration: String {
-        proxyDaysLeft == 1 ? "1 DIA" : "\(proxyDaysLeft) DIAS"
+        let remaining = max(0, proxyKeyExpiresAt - Date().timeIntervalSince1970)
+        let totalSeconds = Int(remaining)
+        let days = totalSeconds / 86_400
+        let hours = (totalSeconds % 86_400) / 3_600
+        let minutes = (totalSeconds % 3_600) / 60
+        let seconds = totalSeconds % 60
+        if days > 0 { return "\(days)d \(hours)h \(minutes)m" }
+        return String(format: "%02dh %02dm %02ds", hours, minutes, seconds)
     }
 
     var body: some View {
@@ -222,7 +245,7 @@ private struct DashboardView: View {
                         ("PRODUTO", "EXTERNAL", .white),
                         ("STATUS DA KEY", "VIP ATIVO", .green),
                         ("TEMPO DA KEY", keyDuration, .white),
-                        ("EXPIRAÇÃO", proxyDaysLeft > 0 ? "ATIVA" : "AGUARDANDO ATIVAÇÃO", .secondary),
+                        ("EXPIRAÇÃO", proxyKeyExpiresAt > Date().timeIntervalSince1970 ? keyDuration : "EXPIRADA", proxyKeyExpiresAt > Date().timeIntervalSince1970 ? .green : .red),
                         ("CHAVE", proxyAccessKey.isEmpty ? "NÃO DISPONÍVEL" : proxyAccessKey, .secondary),
                         ("CONTATO", "SUPORTE ONLINE", .white),
                         ("ID DO DISPOSITIVO", deviceID, .secondary)
@@ -266,6 +289,31 @@ private struct DashboardView: View {
             .background(Color.black.ignoresSafeArea())
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+private struct SecurityBlockedView: View {
+    var body: some View {
+        ZStack {
+            AppBackgroundView().ignoresSafeArea()
+            VStack(spacing: 18) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 54, weight: .bold))
+                    .foregroundStyle(AppTheme.accent)
+                Text("ACESSO BLOQUEADO")
+                    .font(.title3.weight(.bold))
+                    .tracking(1.2)
+                Text("O ambiente do aplicativo não passou pelas verificações de segurança. Feche o app e abra-o novamente em um ambiente autorizado.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+            .padding(28)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(AppTheme.glassStroke, lineWidth: 1))
+            .padding(24)
         }
     }
 }
