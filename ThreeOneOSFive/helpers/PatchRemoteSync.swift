@@ -96,7 +96,7 @@ enum PatchRemoteSync {
         
         let cachedURL = root.appendingPathComponent(cachedManifestName)
         
-        let oldManifest = try? loadManifest(at: cachedURL, fileManager: fileManager)
+        let oldManifest: RemotePatchManifest? = try? loadManifest(at: cachedURL, fileManager: fileManager)
         
 
         
@@ -170,9 +170,9 @@ enum PatchRemoteSync {
         
         var remoteNames = UserDefaults.standard.dictionary(forKey: "proxy_system_remote_patch_names") as? [String: String] ?? [:]
         
-        let oldNames = Set(oldManifest?.patches.map(\.filename) ?? [])
+        let oldNames = Set(oldManifest?.patches.map { $0.filename } ?? [])
         
-        let newNames = Set(manifest.patches.map(\.filename))
+        let newNames = Set(manifest.patches.map { $0.filename })
         
         var changed = 0
         
@@ -282,6 +282,21 @@ enum PatchRemoteSync {
         
         UserDefaults.standard.set(remoteNames, forKey: "proxy_system_remote_patch_names")
         
+        try manifestData.write(to: cachedURL, options: [.atomic])
+        
+        return changed
+        
+    }
+    
+
+    
+    private static func isValidThemeColor(_ value: String) -> Bool {
+        
+        value.range(of: #"^#[0-9A-Fa-f]{6}$"#, options:
+
+
+
+
 
 
 
