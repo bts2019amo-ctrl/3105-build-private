@@ -141,6 +141,23 @@ enum PatchProjectLibrary {
         return destination
     }
 
+    static func installRemotePackage(
+        data: Data,
+        existingURL: URL?,
+        fileManager: FileManager = .default
+    ) throws {
+        let summary = try PatchPackageCodec.inspect(data)
+        guard !summary.isPasswordProtected else { throw PatchPackageError.invalidProject }
+        let decoded = try PatchPackageCodec.decode(data, password: nil)
+        try installImportedPackage(
+            data: data,
+            decoded: decoded,
+            summary: summary,
+            existingURL: existingURL,
+            fileManager: fileManager
+        )
+    }
+
     static func installImportedPackage(
         data: Data,
         decoded: DecodedPatchPackage,

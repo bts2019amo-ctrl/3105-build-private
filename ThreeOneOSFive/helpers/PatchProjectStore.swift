@@ -43,6 +43,29 @@ final class PatchProjectStore: ObservableObject {
         items = PatchProjectLibrary.load()
     }
 
+    func synchronizeRemote() {
+        guard !isBusy else { return }
+        isBusy = true
+        Task { [weak self] in
+            do {
+                let changed = try await PatchRemoteSync.synchronize()
+                self?.reload()
+                self?.isBusy = false
+                self?.alert = PatchStoreAlert(
+                    titleKey: "common.done",
+                    messageKey: "patch.remote_sync_message",
+                    messageArgument: String(changed)
+                )
+            } catch {
+                self?.isBusy = false
+                self?.alert = PatchStoreAlert(
+                    titleKey: "common.failed",
+                    messageKey: "patch.remote_sync_failed"
+                )
+            }
+        }
+    }
+
     func create(project: PatchProject, password: String?) {
         runOperation(successMessageKey: "patch.created_message") {
             let encoded = try PatchPackageCodec.encodeNew(project: project, password: password)
