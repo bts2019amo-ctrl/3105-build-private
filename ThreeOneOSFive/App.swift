@@ -29,6 +29,7 @@ final class AppState: ObservableObject {
     @Published var unsupportedMessage: String?
     @Published private(set) var isSecurityCompromised = SecurityGuard.isCompromised
     @Published private(set) var isKeySessionInvalidated = false
+    private var revalidationInFlight = false
 
     var isSupported: Bool { unsupportedMessage == nil && !isSecurityCompromised }
 
@@ -43,20 +44,29 @@ final class AppState: ObservableObject {
     }
 
     func revalidateStoredKey() {
+        guard !revalidationInFlight else { return }
         let key = UserDefaults.standard.string(forKey: "proxy_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !key.isEmpty else { return }
-        Task.detached(priority: .utility) { [weak self] in
+
+        revalidationInFlight = true
+        Task { [weak self] in
+            defer { self?.revalidationInFlight = false }
             do {
                 let result = try await KeyRevalidationService.validate(key)
+                guard let self else { return }
+
+                // Ignore a response that belongs to a session already replaced by another key.
+                let currentKey = UserDefaults.standard.string(forKey: "proxy_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                guard currentKey == key else { return }
+
                 guard result.valid else {
-                    await self?.invalidateKeySession()
+                    self.invalidateKeySession()
                     return
                 }
-                await MainActor.run {
-                    let days = max(0, result.daysLeft ?? 0)
-                    UserDefaults.standard.set(days, forKey: "proxy_days_left")
-                    UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970, forKey: "proxy_key_expires_at")
-                }
+
+                let days = max(0, result.daysLeft ?? 0)
+                UserDefaults.standard.set(days, forKey: "proxy_days_left")
+                UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970, forKey: "proxy_key_expires_at")
             } catch {
                 // Rede indisponível não encerra a sessão; a próxima verificação tentará novamente.
             }
@@ -72,7 +82,7 @@ final class AppState: ObservableObject {
             exploitStatus = .success(method: "Simulator preview")
         }
 #endif
-        unsupportedMessage = supported ? nil : "iOS \(AppInfo.osVersion) (\(AppInfo.osBuild))"
+        unsupportedMessage = supported ? nil : "iOS (AppInfo.osVersion) ((AppInfo.osBuild))"
         if let unsupportedMessage { exploitStatus = .unsupported(unsupportedMessage) }
     }
 }
