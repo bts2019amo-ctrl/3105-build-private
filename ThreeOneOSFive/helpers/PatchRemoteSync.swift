@@ -47,7 +47,8 @@ enum PatchRemoteSync {
         let root = try PatchProjectLibrary.packageRootURL(fileManager: fileManager)
         let cachedURL = root.appendingPathComponent(cachedManifestName)
         let oldManifest = try? loadManifest(at: cachedURL, fileManager: fileManager)
-        let configuration = URLSessionConfiguration.ephemeral
+
+        let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 180
         let session = URLSession(configuration: configuration)
@@ -55,13 +56,20 @@ enum PatchRemoteSync {
 
         let manifestData: Data
         do {
-            let (data, response) = try await session.data(from: manifestURL)
+            var request = URLRequest(
+                url: manifestURL,
+                cachePolicy: .reloadIgnoringLocalCacheData,
+                timeoutInterval: 30
+            )
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 throw PatchRemoteSyncError.unavailable
             }
             manifestData = data
         } catch {
             if oldManifest != nil { return 0 }
+            if let syncError = error as? PatchRemoteSyncError { throw syncError }
             throw PatchRemoteSyncError.unavailable
         }
 
@@ -71,29 +79,49 @@ enum PatchRemoteSync {
         } catch {
             throw PatchRemoteSyncError.invalidManifest
         }
+
         let oldNames = Set(oldManifest?.patches.map(\.filename) ?? [])
         let newNames = Set(manifest.patches.map(\.filename))
         var changed = 0
 
         for entry in manifest.patches {
-            guard entry.filename.lowercased().hasSuffix(".3105") else { throw PatchRemoteSyncError.invalidPatchName }
-            guard entry.sizeBytes > 0, entry.sizeBytes <= maxPatchBytes else { throw PatchRemoteSyncError.invalidSize }
+            guard entry.filename.lowercased().hasSuffix(".3105") else {
+                throw PatchRemoteSyncError.invalidPatchName
+            }
+            guard entry.sizeBytes > 0, entry.sizeBytes <= maxPatchBytes else {
+                throw PatchRemoteSyncError.invalidSize
+            }
+
             let localURL = root.appendingPathComponent(entry.filename)
-            if let localData = try? PatchProjectLibrary.readPackage(at: localURL), sha256(localData) == entry.sha256 {
+            if let localData = try? PatchProjectLibrary.readPackage(at: localURL),
+               sha256(localData) == entry.sha256 {
                 continue
             }
+
             guard let remoteURL = URL(string: entry.url, relativeTo: manifestURL)?.absoluteURL else {
                 throw PatchRemoteSyncError.invalidManifest
             }
-            let (data, response) = try await session.data(from: remoteURL)
+
+            var request = URLRequest(
+                url: remoteURL,
+                cachePolicy: .reloadIgnoringLocalCacheData,
+                timeoutInterval: 180
+            )
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 throw PatchRemoteSyncError.unavailable
             }
             guard data.count == entry.sizeBytes, sha256(data) == entry.sha256 else {
                 throw PatchRemoteSyncError.invalidHash
             }
+
             do {
-                try PatchProjectLibrary.installRemotePackage(data: data, existingURL: fileManager.fileExists(atPath: localURL.path) ? localURL : nil, fileManager: fileManager)
+                try PatchProjectLibrary.installRemotePackage(
+                    data: data,
+                    existingURL: fileManager.fileExists(atPath: localURL.path) ? localURL : nil,
+                    fileManager: fileManager
+                )
             } catch PatchPackageError.invalidProject {
                 throw PatchRemoteSyncError.passwordProtectedRemotePatch
             }
@@ -104,13 +132,22 @@ enum PatchRemoteSync {
             let localURL = root.appendingPathComponent(removedName)
             try? fileManager.removeItem(at: localURL)
         }
-        try manifestData.write(to: cachedURL, options: [.atomic, .completeFileProtection])
+
+        // The manifest is not secret. Avoid completeFileProtection here so a sync
+        // started while iOS data protection is transitioning cannot fail after a
+        // successful network request.
+        try manifestData.write(to: cachedURL, options: [.atomic])
         return changed
     }
 
     private static func loadManifest(at url: URL, fileManager: FileManager) throws -> RemotePatchManifest {
-        guard fileManager.fileExists(atPath: url.path) else { throw PatchRemoteSyncError.invalidManifest }
-        return try JSONDecoder().decode(RemotePatchManifest.self, from: Data(contentsOf: url, options: .mappedIfSafe))
+        guard fileManager.fileExists(atPath: url.path) else {
+            throw PatchRemoteSyncError.invalidManifest
+        }
+        return try JSONDecoder().decode(
+            RemotePatchManifest.self,
+            from: Data(contentsOf: url, options: .mappedIfSafe)
+        )
     }
 
     private static func sha256(_ data: Data) -> String {
