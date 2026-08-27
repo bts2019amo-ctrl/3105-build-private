@@ -62,9 +62,9 @@ enum GamePatchVersion: String, CaseIterable, Identifiable {
 
         switch self {
 
-        case .normal: return Color(red: 0.98, green: 0.22, blue: 0.20)
+        case .normal: return AppTheme.accent
 
-        case .max: return Color(red: 1.00, green: 0.38, blue: 0.18)
+        case .max: return AppTheme.accent
 
         }
 
