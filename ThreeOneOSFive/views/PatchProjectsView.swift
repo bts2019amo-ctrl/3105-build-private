@@ -145,7 +145,6 @@ struct PatchProjectsView: View {
                         Image(systemName: store.isSyncing ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
                     }
                     .accessibilityLabel("Sincronizar patches online")
-                    .symbolEffect(.rotate, isActive: store.isSyncing)
                     .disabled(store.isSyncing)
                 }
             }
