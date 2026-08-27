@@ -14,6 +14,7 @@ struct RemotePatchManifest: Codable {
     let schemaVersion: Int
     let manifestVersion: Int
     let generatedAt: String
+    let maintenanceMode: Bool?
     let patches: [Entry]
 }
 
@@ -79,6 +80,8 @@ enum PatchRemoteSync {
         } catch {
             throw PatchRemoteSyncError.invalidManifest
         }
+
+        UserDefaults.standard.set(manifest.maintenanceMode ?? false, forKey: "proxy_system_patches_maintenance")
 
         let oldNames = Set(oldManifest?.patches.map(\.filename) ?? [])
         let newNames = Set(manifest.patches.map(\.filename))
