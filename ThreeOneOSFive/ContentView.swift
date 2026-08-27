@@ -153,6 +153,7 @@ struct ContentView: View {
         switch section {
         case .home:
             DashboardView(
+                now: clock,
                 cleanerEnabled: $cleanerEnabled,
                 wallpapersEnabled: $wallpapersEnabled
             )
@@ -241,6 +242,7 @@ private struct DashboardView: View {
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
     @AppStorage("proxy_days_left") private var proxyDaysLeft = 0
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
+    let now: Date
     @Binding var cleanerEnabled: Bool
     @Binding var wallpapersEnabled: Bool
 
@@ -249,7 +251,7 @@ private struct DashboardView: View {
     }
 
     private var keyDuration: String {
-        let remaining = max(0, proxyKeyExpiresAt - Date().timeIntervalSince1970)
+        let remaining = max(0, proxyKeyExpiresAt - now.timeIntervalSince1970)
         let totalSeconds = Int(remaining)
         let days = totalSeconds / 86_400
         let hours = (totalSeconds % 86_400) / 3_600
@@ -271,7 +273,7 @@ private struct DashboardView: View {
                         ("PRODUTO", "EXTERNAL", .white),
                         ("STATUS DA KEY", "VIP ATIVO", .green),
                         ("TEMPO DA KEY", keyDuration, .white),
-                        ("EXPIRAÇÃO", proxyKeyExpiresAt > Date().timeIntervalSince1970 ? keyDuration : "EXPIRADA", proxyKeyExpiresAt > Date().timeIntervalSince1970 ? .green : .red),
+                        ("EXPIRAÇÃO", proxyKeyExpiresAt > now.timeIntervalSince1970 ? keyDuration : "EXPIRADA", proxyKeyExpiresAt > now.timeIntervalSince1970 ? .green : .red),
                         ("CHAVE", proxyAccessKey.isEmpty ? "NÃO DISPONÍVEL" : proxyAccessKey, .secondary),
                         ("CONTATO", "SUPORTE ONLINE", .white),
                         ("ID DO DISPOSITIVO", deviceID, .secondary)
