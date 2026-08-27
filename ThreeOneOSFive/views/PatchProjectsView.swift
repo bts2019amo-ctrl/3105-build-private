@@ -120,6 +120,17 @@ struct PatchProjectsView: View {
             .preferredColorScheme(.dark)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        store.synchronizeRemote()
+                    } label: {
+                        Image(systemName: store.isBusy ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
+                    }
+                    .accessibilityLabel("Sincronizar patches online")
+                    .disabled(store.isBusy)
+                }
+            }
             .sheet(isPresented: $showImporter) {
                 FileDocumentPicker(
                     allowedContentTypes: PatchPackagePickerPolicy.allowedContentTypes,
