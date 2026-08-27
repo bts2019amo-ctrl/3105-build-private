@@ -42,6 +42,7 @@ struct ProxyLoginView: View {
   
     @AppStorage("proxy_access_key") private var storedKey = ""
     @AppStorage("proxy_days_left") private var proxyDaysLeft = 0
+    @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
   
     @State private var key = ""
   
@@ -65,23 +66,27 @@ struct ProxyLoginView: View {
                   
                     Spacer(minLength: 54)
                   
-                    Image(systemName: "lock.shield.fill")
-                  
-                        .font(.system(size: 58, weight: .bold))
-                  
-                        .foregroundStyle(AppTheme.accent)
-                  
-                        .shadow(color: AppTheme.accent.opacity(0.55), radius: 18)
-                  
+                    ZStack {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .frame(width: 104, height: 104)
+                            .overlay(Circle().stroke(AppTheme.accent.opacity(0.45), lineWidth: 1))
+                            .shadow(color: AppTheme.accent.opacity(0.24), radius: 22)
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 44, weight: .bold))
+                            .foregroundStyle(AppTheme.accent)
+                            .shadow(color: AppTheme.accent.opacity(0.55), radius: 18)
+                    }
                     Text("PROXY SYSTEM")
-                  
-                        .font(.headline)
-                  
+                        .font(.title3.weight(.bold))
                         .tracking(1.5)
-                  
                         .foregroundStyle(AppTheme.accent)
-                  
+                    Text("ACESSO SEGURO AO SISTEMA")
+                        .font(.caption.weight(.semibold))
+                        .tracking(1.1)
+                        .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 10) {
+
                       
                         Text("CHAVE DE ACESSO")
                       
@@ -153,15 +158,29 @@ struct ProxyLoginView: View {
                   
                 }
               
-                .padding(.horizontal, 24)
-              
+                                .padding(.horizontal, 24)
+                .padding(.vertical, 28)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(AppTheme.glassStroke, lineWidth: 1))
+                .shadow(color: .black.opacity(0.22), radius: 24, y: 12)
+                .padding(.horizontal, 18)
             }
+
           
         }
       
         .preferredColorScheme(.dark)
       
-        .onAppear { key = storedKey }
+        .onAppear {
+            if proxyKeyExpiresAt > 0 && proxyKeyExpiresAt <= Date().timeIntervalSince1970 {
+                storedKey = ""
+                proxyDaysLeft = 0
+                proxyKeyExpiresAt = 0
+                key = ""
+            } else {
+                key = storedKey
+            }
+        }
       
         .alert("Acesso liberado", isPresented: $showSuccess) {
           
@@ -227,9 +246,9 @@ struct ProxyLoginView: View {
               
                 storedKey = trimmed
                 proxyDaysLeft = result.daysLeft ?? 0
-              
+                proxyKeyExpiresAt = Date().addingTimeInterval(TimeInterval(max(0, result.daysLeft ?? 0)) * 86_400).timeIntervalSince1970
                 showSuccess = true
-              
+
             } else {
               
                 errorMessage = result.reason ?? "Chave inválida ou expirada."
