@@ -221,30 +221,36 @@ struct PatchProjectsView: View {
 
     @ViewBuilder
     private func itemRow(_ item: PatchLibraryItem) -> some View {
-        HStack(spacing: 12) {
+        Button {
             if item.isLocked {
-                Button { store.requestUnlock(for: item) } label: {
-                    PatchProjectRow(item: item, language: language)
-                }
-                .buttonStyle(.plain)
+                store.requestUnlock(for: item)
             } else {
-                PatchProjectRow(item: item, language: language)
+                store.setEnabled(!store.isActive(item), for: item)
             }
-            Spacer(minLength: 8)
-            Toggle(
-                "",
-                isOn: Binding(
-                    get: { store.isActive(item) },
-                    set: { store.setEnabled($0, for: item) }
-                )
+        } label: {
+            PatchProjectRow(
+                item: item,
+                language: language,
+                isActive: store.isActive(item),
+                isApplying: store.isApplyingPatchIDs.contains(item.id)
             )
-            .labelsHidden()
-            .toggleStyle(PremiumLiquidGlassToggleStyle())
-            .tint(AppTheme.accent)
-            .disabled(store.isApplyingPatchIDs.contains(item.id))
         }
+        .buttonStyle(.plain)
+        .disabled(store.isApplyingPatchIDs.contains(item.id))
         .padding(.vertical, 6)
         .contentShape(Rectangle())
+        .accessibilityLabel(
+            item.isLocked
+                ? language.text("patch.tap_to_unlock")
+                : (store.isActive(item) ? "Desativar patch" : "Ativar patch")
+        )
+        .accessibilityHint(
+            item.isLocked
+                ? "Toque para desbloquear este patch"
+                : (store.isActive(item)
+                    ? "Toque para restaurar o arquivo original"
+                    : "Toque para aplicar este patch")
+        )
     }
 
     private var emptyState: some View {
@@ -296,6 +302,8 @@ private struct HSVIPSPulse: ViewModifier {
 private struct PatchProjectRow: View {
     let item: PatchLibraryItem
     let language: AppLanguage
+    let isActive: Bool
+    let isApplying: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -317,6 +325,16 @@ private struct PatchProjectRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            if isApplying {
+                ProgressView()
+                    .tint(AppTheme.accent)
+                    .accessibilityLabel("Aplicando alteração")
+            } else if !item.isLocked {
+                Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(isActive ? AppTheme.accent : .secondary)
+                    .accessibilityHidden(true)
+            }
             if item.summary.isPasswordProtected {
                 Image(systemName: "key.fill")
                     .font(.caption)
@@ -328,10 +346,18 @@ private struct PatchProjectRow: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(AppTheme.glassStroke, lineWidth: 1)
+                .stroke(
+                    isActive ? AppTheme.accent.opacity(0.70) : AppTheme.glassStroke,
+                    lineWidth: isActive ? 1.5 : 1
+                )
         }
-        .shadow(color: .black.opacity(0.18), radius: 14, y: 7)
+        .shadow(
+            color: isActive ? AppTheme.accent.opacity(0.24) : .black.opacity(0.18),
+            radius: isActive ? 16 : 14,
+            y: 7
+        )
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .animation(.easeOut(duration: 0.18), value: isActive)
         .animation(.easeInOut(duration: 0.22), value: item.isLocked)
         .modifier(HSVIPSPulse())
     }
