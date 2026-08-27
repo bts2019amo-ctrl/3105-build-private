@@ -90,7 +90,7 @@ targets:
     
       base:
       
-        SWIFT_OBJC_BRIDGING_HEADER: ThreeOneOSFive/ThreeOneOSFive-Bridging-Header.h
+        SWIFT_OBJC_BRIDGING_HEADER: $(SRCROOT)/ThreeOneOSFive/ThreeOneOSFive-Bridging-Header.h
         
         GENERATE_INFOPLIST_FILE: NO
         
