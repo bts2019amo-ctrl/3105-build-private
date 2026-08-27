@@ -3,10 +3,10 @@ import Foundation
 struct PatchLibraryItem: Identifiable {
     let summary: PatchPackageSummary
     var project: PatchProject?
-    var contentKey: Data?
-    var packageURL: URL
-
-    var id: UUID { summary.packageID }
+    var contentKey: Data?    var id: UUID { summary.packageID }
+    var displayName: String { remoteDisplayName ?? project?.name ?? packageURL.deletingPathExtension().lastPathComponent }
+    var remoteDisplayName: String?
+UID { summary.packageID }
     var isLocked: Bool { project == nil }
     var workspaceURL: URL? {
         PatchWorkspaceService.workspaceURL(projectID: id)
@@ -48,6 +48,7 @@ enum PatchProjectLibrary {
               ) else { return [] }
 
         var byID: [UUID: PatchLibraryItem] = [:]
+        let remoteNames = UserDefaults.standard.dictionary(forKey: "proxy_system_remote_patch_names") as? [String: String] ?? [:]
         for url in urls where url.pathExtension.lowercased() == "3105" {
             do {
                 let data = try readPackage(at: url)
@@ -65,6 +66,7 @@ enum PatchProjectLibrary {
                     project: decoded?.project,
                     contentKey: decoded?.contentKey,
                     packageURL: url
+                    remoteDisplayName: remoteNames[summary.sha256]
                 )
                 if summary.schemaVersion >= 2, let project = decoded?.project {
                     do {
