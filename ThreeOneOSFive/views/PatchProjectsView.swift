@@ -71,7 +71,22 @@ struct PatchProjectsView: View {
                     clearLabel: language.text("common.clear")
                 )
                 Divider()
-                List {
+                if store.isMaintenanceMode {
+                    VStack(spacing: 12) {
+                        Image(systemName: "wrench.and.screwdriver")
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundStyle(AppTheme.accent)
+                        Text("Patches em manutenção")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                        Text("Os patches voltarão a aparecer quando a manutenção terminar.")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(32)
+                } else {
+                    List {
                     if store.items.isEmpty && !store.isBusy {
                         emptyState
                             .listRowSeparator(.hidden)
@@ -114,7 +129,8 @@ struct PatchProjectsView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
-                .background(Color.clear)
+                    .background(Color.clear)
+                }
             }
             .navigationTitle("HS VIPS")
             .preferredColorScheme(.dark)
