@@ -32,10 +32,12 @@ struct ThreeOneOSFiveApp: App {
 class AppState: ObservableObject {
     @Published var exploitStatus: ExploitStatus = .notStarted
     @Published var unsupportedMessage: String?
+    @Published private(set) var isSecurityCompromised = SecurityGuard.isCompromised
 
-    var isSupported: Bool { unsupportedMessage == nil }
+    var isSupported: Bool { unsupportedMessage == nil && !isSecurityCompromised }
 
     func detectSupport() {
+        isSecurityCompromised = SecurityGuard.isCompromised
         let v = AppInfo.versionTuple
         let supported = ExploitSupportPolicy.isSupported(
             major: v.major,
