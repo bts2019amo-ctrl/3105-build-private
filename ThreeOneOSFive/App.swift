@@ -29,28 +29,49 @@ final class AppState: ObservableObject {
     @Published var unsupportedMessage: String?
     @Published private(set) var isSecurityCompromised = SecurityGuard.isCompromised
     @Published private(set) var isKeySessionInvalidated = false
+    @Published private(set) var isCheckingStoredKey = false
     private var revalidationInFlight = false
+
+    init() {
+        let storedKey = UserDefaults.standard.string(forKey: "proxy_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        isCheckingStoredKey = !storedKey.isEmpty
+        isKeySessionInvalidated = !storedKey.isEmpty
+    }
 
     var isSupported: Bool { unsupportedMessage == nil && !isSecurityCompromised }
 
-    func markKeySessionValid() { isKeySessionInvalidated = false }
+    func markKeySessionValid() {
+        isCheckingStoredKey = false
+        isKeySessionInvalidated = false
+    }
 
     func invalidateKeySession() {
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: "proxy_access_key")
         defaults.removeObject(forKey: "proxy_days_left")
         defaults.removeObject(forKey: "proxy_key_expires_at")
+        isCheckingStoredKey = false
         isKeySessionInvalidated = true
     }
 
-    func revalidateStoredKey() {
+    func revalidateStoredKey(isInitial: Bool = false) {
         guard !revalidationInFlight else { return }
         let key = UserDefaults.standard.string(forKey: "proxy_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !key.isEmpty else { return }
+        guard !key.isEmpty else {
+            isCheckingStoredKey = false
+            return
+        }
 
+        if isInitial {
+            isCheckingStoredKey = true
+            isKeySessionInvalidated = true
+        }
         revalidationInFlight = true
         Task { [weak self] in
-            defer { self?.revalidationInFlight = false }
+            defer {
+                self?.revalidationInFlight = false
+                if isInitial { self?.isCheckingStoredKey = false }
+            }
             do {
                 let result = try await KeyRevalidationService.validate(key)
                 guard let self else { return }
@@ -67,8 +88,10 @@ final class AppState: ObservableObject {
                 let days = max(0, result.daysLeft ?? 0)
                 UserDefaults.standard.set(days, forKey: "proxy_days_left")
                 UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970, forKey: "proxy_key_expires_at")
+                self.markKeySessionValid()
             } catch {
-                // Rede indisponível não encerra a sessão; a próxima verificação tentará novamente.
+                // Na abertura, a falha de validação mantém o app no login com a key preenchida.
+                if isInitial { self?.isKeySessionInvalidated = true }
             }
         }
     }
