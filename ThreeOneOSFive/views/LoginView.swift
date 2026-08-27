@@ -220,7 +220,14 @@ struct ProxyLoginView: View {
             if result.valid {
                 storedKey = trimmed
                 proxyDaysLeft = result.daysLeft ?? 0
-                proxyKeyExpiresAt = Date().addingTimeInterval(TimeInterval(max(0, result.daysLeft ?? 0)) * 86_400).timeIntervalSince1970
+
+                // Start one absolute countdown for this key. Revalidation and
+                // relaunch must reuse it instead of resetting the remaining time.
+                let anchorKey = "proxy_key_expiration_anchor"
+                if UserDefaults.standard.string(forKey: anchorKey) != trimmed || proxyKeyExpiresAt <= Date().timeIntervalSince1970 {
+                    proxyKeyExpiresAt = Date().addingTimeInterval(TimeInterval(max(0, result.daysLeft ?? 0)) * 86_400).timeIntervalSince1970
+                    UserDefaults.standard.set(trimmed, forKey: anchorKey)
+                }
                 appState.markKeySessionValid()
                 showSuccess = true
             } else {
