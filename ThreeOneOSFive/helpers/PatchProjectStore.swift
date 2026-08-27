@@ -24,9 +24,17 @@ struct PatchStoreAlert: Identifiable {
 final class PatchProjectStore: ObservableObject {
     @Published private(set) var items: [PatchLibraryItem] = []
     @Published private(set) var isBusy = false
+    @Published private(set) var isLoading = false
+    @Published private(set) var isSyncing = false
+    @Published private(set) var isApplyingPatchIDs: Set<UUID> = []
     @Published private(set) var isMaintenanceMode = false
     @Published var passwordRequest: PatchPasswordRequest?
     @Published var alert: PatchStoreAlert?
+
+    private struct LoadedLocalState: @unchecked Sendable {
+        let items: [PatchLibraryItem]
+        let isMaintenanceMode: Bool
+    }
 
     private struct PendingUnlock {
         let data: Data
@@ -37,7 +45,7 @@ final class PatchProjectStore: ObservableObject {
     private var pendingUnlock: PendingUnlock?
 
     init() {
-        reload()
+        reloadInBackground()
     }
 
     func reload() {
@@ -45,27 +53,57 @@ final class PatchProjectStore: ObservableObject {
         isMaintenanceMode = UserDefaults.standard.bool(forKey: "proxy_system_patches_maintenance")
     }
 
+    private nonisolated static func loadLocalState() -> LoadedLocalState {
+        LoadedLocalState(
+            items: PatchProjectLibrary.load(),
+            isMaintenanceMode: UserDefaults.standard.bool(forKey: "proxy_system_patches_maintenance")
+        )
+    }
+
+    private func reloadInBackground() {
+        guard !isLoading else { return }
+        isLoading = true
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let state = Self.loadLocalState()
+            await self?.applyLoadedState(state)
+        }
+    }
+
+    private func applyLoadedState(_ state: LoadedLocalState) {
+        items = state.items
+        isMaintenanceMode = state.isMaintenanceMode
+        isLoading = false
+    }
+
     func synchronizeRemote() {
-        guard !isBusy else { return }
-        isBusy = true
-        Task { [weak self] in
+        guard !isSyncing else { return }
+        isSyncing = true
+        Task.detached(priority: .utility) { [weak self] in
             do {
                 let changed = try await PatchRemoteSync.synchronize()
-                self?.reload()
-                self?.isBusy = false
-                self?.alert = PatchStoreAlert(
-                    titleKey: "common.done",
-                    messageKey: "patch.remote_sync_message",
-                    messageArgument: String(changed)
-                )
+                await self?.finishRemoteSync(changed: changed)
             } catch {
-                self?.isBusy = false
-                self?.alert = PatchStoreAlert(
-                    titleKey: "common.failed",
-                    messageKey: "patch.remote_sync_failed"
-                )
+                await self?.failRemoteSync()
             }
         }
+    }
+
+    private func finishRemoteSync(changed: Int) {
+        isSyncing = false
+        reloadInBackground()
+        alert = PatchStoreAlert(
+            titleKey: "common.done",
+            messageKey: "patch.remote_sync_message",
+            messageArgument: String(changed)
+        )
+    }
+
+    private func failRemoteSync() {
+        isSyncing = false
+        alert = PatchStoreAlert(
+            titleKey: "common.failed",
+            messageKey: "patch.remote_sync_failed"
+        )
     }
 
     func create(project: PatchProject, password: String?) {
@@ -367,13 +405,16 @@ final class PatchProjectStore: ObservableObject {
     }
 
     func setEnabled(_ enabled: Bool, for item: PatchLibraryItem) {
-        guard !isBusy else { return }
+        guard !isBusy, !isApplyingPatchIDs.contains(item.id) else { return }
         guard !item.isLocked, let project = item.project else {
             if item.isLocked { requestUnlock(for: item) } else { present(.invalidProject) }
             return
         }
-        isBusy = true
         let projectID = item.id
+        let previousState = isActive(item)
+        if enabled { activePatchIDs.insert(projectID) }
+        else { activePatchIDs.remove(projectID) }
+        isApplyingPatchIDs.insert(projectID)
         Task.detached(priority: .userInitiated) { [weak self] in
             do {
                 if enabled {
@@ -385,18 +426,22 @@ final class PatchProjectStore: ObservableObject {
                 }
                 await self?.finishToggle(projectID: projectID, enabled: enabled)
             } catch let error as PatchPackageError {
-                await self?.failOperation(error)
+                await self?.failToggle(projectID: projectID, previousState: previousState, error: error)
             } catch {
-                await self?.failOperation(.invalidProject)
+                await self?.failToggle(projectID: projectID, previousState: previousState, error: .invalidProject)
             }
         }
     }
 
     private func finishToggle(projectID: UUID, enabled: Bool) {
-        if enabled { activePatchIDs.insert(projectID) }
+        isApplyingPatchIDs.remove(projectID)
+    }
+
+    private func failToggle(projectID: UUID, previousState: Bool, error: PatchPackageError) {
+        if previousState { activePatchIDs.insert(projectID) }
         else { activePatchIDs.remove(projectID) }
-        reload()
-        isBusy = false
+        isApplyingPatchIDs.remove(projectID)
+        present(error)
     }
 
 }
