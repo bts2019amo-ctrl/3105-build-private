@@ -459,3 +459,8 @@
 "wallpaper.error.install" = "Installation failed and any descriptors added during this attempt were rolled back.";
 "wallpaper.error.restore" = "3105 could not safely remove every descriptor from this installation.";
 "wallpaper.error.unknown" = "An unexpected error occurred. Review Session Logs for details.";
+
+
+// Remote patch synchronization
+"patch.remote_sync_failed" = "Could not update patches. Check your connection and try again.";
+"patch.remote_sync_message" = "%@ patch(es) updated.";
