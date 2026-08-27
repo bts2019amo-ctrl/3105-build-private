@@ -50,6 +50,7 @@ final class AppState: ObservableObject {
         defaults.removeObject(forKey: "proxy_access_key")
         defaults.removeObject(forKey: "proxy_days_left")
         defaults.removeObject(forKey: "proxy_key_expires_at")
+        defaults.removeObject(forKey: "proxy_key_expiration_anchor")
         isCheckingStoredKey = false
         isKeySessionInvalidated = true
     }
@@ -85,9 +86,20 @@ final class AppState: ObservableObject {
                     return
                 }
 
+                let defaults = UserDefaults.standard
                 let days = max(0, result.daysLeft ?? 0)
-                UserDefaults.standard.set(days, forKey: "proxy_days_left")
-                UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970, forKey: "proxy_key_expires_at")
+                defaults.set(days, forKey: "proxy_days_left")
+
+                // `daysLeft` is rounded by the API. Anchor the local countdown only
+                // once for this key; periodic revalidation must never reset the clock.
+                let anchorKey = "proxy_key_expiration_anchor"
+                let existingAnchor = defaults.string(forKey: anchorKey)
+                let existingExpiration = defaults.double(forKey: "proxy_key_expires_at")
+                if existingAnchor != key || existingExpiration <= Date().timeIntervalSince1970 {
+                    let expiration = Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970
+                    defaults.set(expiration, forKey: "proxy_key_expires_at")
+                    defaults.set(key, forKey: anchorKey)
+                }
                 self.markKeySessionValid()
             } catch {
                 // Na abertura, a falha de validação mantém o app no login com a key preenchida.
