@@ -1,79 +1,5 @@
 import SwiftUI
 
-
-
-@main
-
-struct ThreeOneOSFiveApp: App {
-    
-    @StateObject private var appState = AppState()
-    
-    @StateObject private var patchDraftCoordinator = PatchDraftCoordinator()
-    
-    @StateObject private var fileOperationCoordinator = FileOperationCoordinator()
-    
-    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.english.rawValue
-    
-
-    
-    private var language: AppLanguage {
-        
-        AppLanguage(rawValue: languageCode) ?? .english
-        
-    }
-    
-
-    
-    var body: some Scene {
-        
-        WindowGroup {
-            
-            ContentView()
-            
-                .environmentObject(appState)
-            
-                .environmentObject(patchDraftCoordinator)
-            
-                .environmentObject(fileOperationCoordinator)
-            
-                .environment(\.appLanguage, language)
-            
-                .environment(\.locale, language.locale)
-            
-                .onAppear {
-                    
-                    appState.detectSupport()
-                    
-                }
-            
-                .onOpenURL { url in
-                            
-                    patchDraftCoordinator.presentImport(url)
-                            
-                           }
-            
-        }
-        
-    }
-    
-}
-
-
-
-@MainActor
-
-class AppState: ObservableObject {
-    
-    @Published var exploitStatus: ExploitStatus = .notStarted
-    
-    @Published var unsupportedMessage: String?
-    
-    @Published private(set) var isSecurityCompromised = SecurityGuard.isCompromised
-    
-    @Published private(set) var isKeySessionInvalidated = false
-    
-
-
 @main
 struct ThreeOneOSFiveApp: App {
     @StateObject private var appState = AppState()
@@ -81,9 +7,7 @@ struct ThreeOneOSFiveApp: App {
     @StateObject private var fileOperationCoordinator = FileOperationCoordinator()
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.english.rawValue
 
-    private var language: AppLanguage {
-        AppLanguage(rawValue: languageCode) ?? .english
-    }
+    private var language: AppLanguage { AppLanguage(rawValue: languageCode) ?? .english }
 
     var body: some Scene {
         WindowGroup {
@@ -93,18 +17,14 @@ struct ThreeOneOSFiveApp: App {
                 .environmentObject(fileOperationCoordinator)
                 .environment(\.appLanguage, language)
                 .environment(\.locale, language.locale)
-                .onAppear {
-                    appState.detectSupport()
-                }
-                .onOpenURL { url in
-                    patchDraftCoordinator.presentImport(url)
-                }
+                .onAppear { appState.detectSupport() }
+                .onOpenURL { url in patchDraftCoordinator.presentImport(url) }
         }
     }
 }
 
 @MainActor
-class AppState: ObservableObject {
+final class AppState: ObservableObject {
     @Published var exploitStatus: ExploitStatus = .notStarted
     @Published var unsupportedMessage: String?
     @Published private(set) var isSecurityCompromised = SecurityGuard.isCompromised
@@ -112,14 +32,13 @@ class AppState: ObservableObject {
 
     var isSupported: Bool { unsupportedMessage == nil && !isSecurityCompromised }
 
-    func markKeySessionValid() {
-        isKeySessionInvalidated = false
-    }
+    func markKeySessionValid() { isKeySessionInvalidated = false }
 
     func invalidateKeySession() {
-        UserDefaults.standard.removeObject(forKey: "proxy_access_key")
-        UserDefaults.standard.removeObject(forKey: "proxy_days_left")
-        UserDefaults.standard.removeObject(forKey: "proxy_key_expires_at")
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "proxy_access_key")
+        defaults.removeObject(forKey: "proxy_days_left")
+        defaults.removeObject(forKey: "proxy_key_expires_at")
         isKeySessionInvalidated = true
     }
 
@@ -133,13 +52,13 @@ class AppState: ObservableObject {
                     await self?.invalidateKeySession()
                     return
                 }
-                let days = max(0, result.daysLeft ?? 0)
                 await MainActor.run {
+                    let days = max(0, result.daysLeft ?? 0)
                     UserDefaults.standard.set(days, forKey: "proxy_days_left")
                     UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970, forKey: "proxy_key_expires_at")
                 }
             } catch {
-                // Falhas de rede não encerram a sessão; a próxima verificação tentará novamente.
+                // Rede indisponível não encerra a sessão; a próxima verificação tentará novamente.
             }
         }
     }
@@ -147,21 +66,13 @@ class AppState: ObservableObject {
     func detectSupport() {
         isSecurityCompromised = SecurityGuard.isCompromised
         let v = AppInfo.versionTuple
-        let supported = ExploitSupportPolicy.isSupported(
-            major: v.major,
-            minor: v.minor,
-            patch: v.patch,
-            build: AppInfo.osBuild
-        )
+        let supported = ExploitSupportPolicy.isSupported(major: v.major, minor: v.minor, patch: v.patch, build: AppInfo.osBuild)
 #if targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--simulate-access") {
             exploitStatus = .success(method: "Simulator preview")
         }
 #endif
-
         unsupportedMessage = supported ? nil : "iOS \(AppInfo.osVersion) (\(AppInfo.osBuild))"
-        if let unsupportedMessage {
-            exploitStatus = .unsupported(unsupportedMessage)
-        }
+        if let unsupportedMessage { exploitStatus = .unsupported(unsupportedMessage) }
     }
 }
