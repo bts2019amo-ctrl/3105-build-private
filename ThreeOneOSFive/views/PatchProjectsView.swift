@@ -236,6 +236,7 @@ struct PatchProjectsView: View {
                 )
             )
             .labelsHidden()
+            .toggleStyle(LiquidGlassToggleStyle())
             .tint(AppTheme.accent)
             .disabled(store.isBusy)
         }
