@@ -1,16 +1,7 @@
- import SwiftUI
-
-private struct ProxyKeyValidation: Decodable {
-    let valid: Bool
-    let daysLeft: Int?
-    let reason: String?
-}
-
-private struct ProxyTRPCData: Decodable { let json: ProxyKeyValidation }
-private struct ProxyTRPCResult: Decodable { let data: ProxyTRPCData }
-private struct ProxyTRPCResponse: Decodable { let result: ProxyTRPCResult }
+import SwiftUI
 
 struct ProxyLoginView: View {
+    @EnvironmentObject private var appState: AppState
     @AppStorage("proxy_access_key") private var storedKey = ""
     @AppStorage("proxy_days_left") private var proxyDaysLeft = 0
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
@@ -224,31 +215,13 @@ struct ProxyLoginView: View {
         defer { isLoading = false }
 
         do {
-            let payload: [String: Any] = ["0": ["json": ["key": trimmed]]]
-            let jsonData = try JSONSerialization.data(withJSONObject: payload)
-            let json = String(data: jsonData, encoding: .utf8) ?? "{}"
-            let encoded = json.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-            guard let url = URL(string: "https://proxysystem.org/api/trpc/iOS.validateKey?batch=1&input=\(encoded)") else { throw URLError(.badURL) }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.timeoutInterval = 10
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-            var (data, response) = try await URLSession.shared.data(for: request)
-            if (response as? HTTPURLResponse)?.statusCode == 404 {
-                guard let fallbackURL = URL(string: "https://proxysystem.org/api/trpc/android.validateKey?batch=1&input=\(encoded)") else { throw URLError(.badURL) }
-                request.url = fallbackURL
-                (data, response) = try await URLSession.shared.data(for: request)
-            }
-
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
-            guard let result = try JSONDecoder().decode([ProxyTRPCResponse].self, from: data).first?.result.data.json else { throw URLError(.cannotParseResponse) }
+            let result = try await KeyRevalidationService.validate(trimmed)
 
             if result.valid {
                 storedKey = trimmed
                 proxyDaysLeft = result.daysLeft ?? 0
                 proxyKeyExpiresAt = Date().addingTimeInterval(TimeInterval(max(0, result.daysLeft ?? 0)) * 86_400).timeIntervalSince1970
+                appState.markKeySessionValid()
                 showSuccess = true
             } else {
                 errorMessage = result.reason ?? "Chave inválida ou expirada."
