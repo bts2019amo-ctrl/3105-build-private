@@ -43,6 +43,7 @@ final class PatchProjectStore: ObservableObject {
     }
 
     private var pendingUnlock: PendingUnlock?
+    private var pendingLocalReload = false
 
     init() {
         reloadInBackground()
@@ -61,6 +62,10 @@ final class PatchProjectStore: ObservableObject {
     }
 
     private func reloadInBackground() {
+        guard isApplyingPatchIDs.isEmpty else {
+            pendingLocalReload = true
+            return
+        }
         guard !isLoading else { return }
         isLoading = true
         Task.detached(priority: .userInitiated) { [weak self] in
@@ -73,29 +78,34 @@ final class PatchProjectStore: ObservableObject {
         items = state.items
         isMaintenanceMode = state.isMaintenanceMode
         isLoading = false
+        if pendingLocalReload && isApplyingPatchIDs.isEmpty {
+            pendingLocalReload = false
+        }
     }
 
-    func synchronizeRemote() {
+    func synchronizeRemote(showsCompletion: Bool = true) {
         guard !isSyncing else { return }
         isSyncing = true
         Task.detached(priority: .utility) { [weak self] in
             do {
                 let changed = try await PatchRemoteSync.synchronize()
-                await self?.finishRemoteSync(changed: changed)
+                await self?.finishRemoteSync(changed: changed, showsCompletion: showsCompletion)
             } catch {
                 await self?.failRemoteSync()
             }
         }
     }
 
-    private func finishRemoteSync(changed: Int) {
+    private func finishRemoteSync(changed: Int, showsCompletion: Bool) {
         isSyncing = false
         reloadInBackground()
-        alert = PatchStoreAlert(
-            titleKey: "common.done",
-            messageKey: "patch.remote_sync_message",
-            messageArgument: String(changed)
-        )
+        if showsCompletion {
+            alert = PatchStoreAlert(
+                titleKey: "common.done",
+                messageKey: "patch.remote_sync_message",
+                messageArgument: String(changed)
+            )
+        }
     }
 
     private func failRemoteSync() {
@@ -435,12 +445,20 @@ final class PatchProjectStore: ObservableObject {
 
     private func finishToggle(projectID: UUID, enabled: Bool) {
         isApplyingPatchIDs.remove(projectID)
+        if pendingLocalReload && isApplyingPatchIDs.isEmpty {
+            pendingLocalReload = false
+            reloadInBackground()
+        }
     }
 
     private func failToggle(projectID: UUID, previousState: Bool, error: PatchPackageError) {
         if previousState { activePatchIDs.insert(projectID) }
         else { activePatchIDs.remove(projectID) }
         isApplyingPatchIDs.remove(projectID)
+        if pendingLocalReload && isApplyingPatchIDs.isEmpty {
+            pendingLocalReload = false
+            reloadInBackground()
+        }
         present(error)
     }
 
