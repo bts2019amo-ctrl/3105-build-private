@@ -33,7 +33,8 @@ final class AppState: ObservableObject {
     private var revalidationInFlight = false
 
     init() {
-        let storedKey = UserDefaults.standard.string(forKey: "proxy_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        LicenseKeyStore.restoreToUserDefaults()
+        let storedKey = UserDefaults.standard.string(forKey: "proxy_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "";
         isCheckingStoredKey = !storedKey.isEmpty
         isKeySessionInvalidated = !storedKey.isEmpty
     }
@@ -46,7 +47,8 @@ final class AppState: ObservableObject {
     }
 
     func invalidateKeySession() {
-        let defaults = UserDefaults.standard
+        LicenseKeyStore.delete()
+        let defaults = UserDefaults.standard;
         defaults.removeObject(forKey: "proxy_access_key")
         defaults.removeObject(forKey: "proxy_days_left")
         defaults.removeObject(forKey: "proxy_key_expires_at")
@@ -90,16 +92,18 @@ final class AppState: ObservableObject {
                 let days = max(0, result.daysLeft ?? 0)
                 defaults.set(days, forKey: "proxy_days_left")
 
-                // `daysLeft` is rounded by the API. Anchor the local countdown only
+                // daysLeft is rounded by the API. Anchor the local countdown only
                 // once for this key; periodic revalidation must never reset the clock.
                 let anchorKey = "proxy_key_expiration_anchor"
                 let existingAnchor = defaults.string(forKey: anchorKey)
                 let existingExpiration = defaults.double(forKey: "proxy_key_expires_at")
-                if existingAnchor != key || existingExpiration <= Date().timeIntervalSince1970 {
+                if existingAnchor != key || existingExpiration <= 0 {
                     let expiration = Date().addingTimeInterval(TimeInterval(days) * 86_400).timeIntervalSince1970
                     defaults.set(expiration, forKey: "proxy_key_expires_at")
                     defaults.set(key, forKey: anchorKey)
                 }
+                let persistedExpiration = defaults.double(forKey: "proxy_key_expires_at")
+                _ = LicenseKeyStore.save(key: key, expiresAt: persistedExpiration, daysLeft: days)
                 self.markKeySessionValid()
             } catch {
                 // Na abertura, a falha de validação mantém o app no login com a key preenchida.
@@ -117,7 +121,7 @@ final class AppState: ObservableObject {
             exploitStatus = .success(method: "Simulator preview")
         }
 #endif
-        unsupportedMessage = supported ? nil : "iOS (AppInfo.osVersion) ((AppInfo.osBuild))"
+        unsupportedMessage = supported ? nil : "iOS (AppInfo.osVersion) (\(AppInfo.osBuild))"
         if let unsupportedMessage { exploitStatus = .unsupported(unsupportedMessage) }
     }
 }
