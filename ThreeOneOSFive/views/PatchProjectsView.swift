@@ -195,9 +195,13 @@ struct PatchProjectsView: View {
             }
             .onAppear {
                 consumeExternalImport()
+                store.startAutomaticRemoteSync()
                 guard !hasStartedInitialSync else { return }
                 hasStartedInitialSync = true
                 store.synchronizeRemote(showsCompletion: false)
+            }
+            .onDisappear {
+                store.stopAutomaticRemoteSync()
             }
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()
