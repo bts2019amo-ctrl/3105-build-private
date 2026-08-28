@@ -45,6 +45,7 @@ final class PatchProjectStore: ObservableObject {
 
     private var pendingUnlock: PendingUnlock?
     private var pendingLocalReload = false
+    private var automaticSyncTask: Task<Void, Never>?
 
     init() {
         reloadInBackground()
@@ -85,6 +86,22 @@ final class PatchProjectStore: ObservableObject {
         if pendingLocalReload && isApplyingPatchIDs.isEmpty {
             pendingLocalReload = false
         }
+    }
+
+    func startAutomaticRemoteSync() {
+        guard automaticSyncTask == nil else { return }
+        automaticSyncTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard !Task.isCancelled else { return }
+                self?.synchronizeRemote(showsCompletion: false)
+            }
+        }
+    }
+
+    func stopAutomaticRemoteSync() {
+        automaticSyncTask?.cancel()
+        automaticSyncTask = nil
     }
 
     func synchronizeRemote(showsCompletion: Bool = true) {
