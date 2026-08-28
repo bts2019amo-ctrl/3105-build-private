@@ -121,6 +121,7 @@ enum PatchProjectLibrary {
         data: Data,
         projectName: String,
         existingURL: URL? = nil,
+        destinationFilename: String? = nil,
         fileManager: FileManager = .default
     ) throws -> URL {
         let destination: URL
@@ -128,12 +129,17 @@ enum PatchProjectLibrary {
             destination = existingURL
         } else {
             let root = try packageRootURL(fileManager: fileManager)
-            let baseName = sanitizedFilename(projectName)
-            var candidate = root.appendingPathComponent(baseName).appendingPathExtension("3105")
-            var suffix = 2
-            while fileManager.fileExists(atPath: candidate.path) {
-                candidate = root.appendingPathComponent("\(baseName)-\(suffix)").appendingPathExtension("3105")
-                suffix += 1
+            let proposedFilename = destinationFilename.flatMap(canonicalFilename) ?? "\(sanitizedFilename(projectName)).3105"
+            var candidate = root.appendingPathComponent(proposedFilename, isDirectory: false)
+            guard destinationFilename == nil || proposedFilename == destinationFilename else {
+                throw PatchPackageError.invalidProject
+            }
+            if destinationFilename == nil {
+                var suffix = 2
+                while fileManager.fileExists(atPath: candidate.path) {
+                    candidate = root.appendingPathComponent("\(sanitizedFilename(projectName))-\(suffix).3105", isDirectory: false)
+                    suffix += 1
+                }
             }
             destination = candidate
         }
@@ -144,6 +150,7 @@ enum PatchProjectLibrary {
     static func installRemotePackage(
         data: Data,
         existingURL: URL?,
+        destinationFilename: String,
         fileManager: FileManager = .default
     ) throws {
         let summary = try PatchPackageCodec.inspect(data)
@@ -154,6 +161,7 @@ enum PatchProjectLibrary {
             decoded: decoded,
             summary: summary,
             existingURL: existingURL,
+            destinationFilename: destinationFilename,
             fileManager: fileManager
         )
     }
@@ -163,6 +171,7 @@ enum PatchProjectLibrary {
         decoded: DecodedPatchPackage,
         summary: PatchPackageSummary,
         existingURL: URL?,
+        destinationFilename: String? = nil,
         fileManager: FileManager = .default
     ) throws {
         let previousData = try existingURL.map { try readPackage(at: $0) }
@@ -172,6 +181,7 @@ enum PatchProjectLibrary {
                 data: data,
                 projectName: decoded.project.name,
                 existingURL: existingURL,
+                destinationFilename: destinationFilename,
                 fileManager: fileManager
             )
             if summary.schemaVersion >= 2 {
@@ -238,6 +248,17 @@ enum PatchProjectLibrary {
             fileManager: fileManager
         )
         return project
+    }
+
+    private static func canonicalFilename(_ rawName: String) -> String? {
+        guard !rawName.isEmpty,
+              rawName.lowercased().hasSuffix(".3105"),
+              !rawName.contains("/"),
+              !rawName.contains("\\"),
+              !rawName.contains(".."),
+              !rawName.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains)
+        else { return nil }
+        return rawName
     }
 
     private static func sanitizedFilename(_ rawName: String) -> String {
