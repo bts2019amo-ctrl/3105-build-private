@@ -224,10 +224,11 @@ struct ProxyLoginView: View {
                 // Start one absolute countdown for this key. Revalidation and
                 // relaunch must reuse it instead of resetting the remaining time.
                 let anchorKey = "proxy_key_expiration_anchor"
-                if UserDefaults.standard.string(forKey: anchorKey) != trimmed || proxyKeyExpiresAt <= Date().timeIntervalSince1970 {
+                if UserDefaults.standard.string(forKey: anchorKey) != trimmed || proxyKeyExpiresAt <= 0 {
                     proxyKeyExpiresAt = Date().addingTimeInterval(TimeInterval(max(0, result.daysLeft ?? 0)) * 86_400).timeIntervalSince1970
                     UserDefaults.standard.set(trimmed, forKey: anchorKey)
                 }
+                _ = LicenseKeyStore.save(key: trimmed, expiresAt: proxyKeyExpiresAt, daysLeft: max(0, result.daysLeft ?? 0))
                 appState.markKeySessionValid()
                 showSuccess = true
             } else {
