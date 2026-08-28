@@ -83,8 +83,10 @@ enum PatchRemoteSync {
 
         UserDefaults.standard.set(manifest.maintenanceMode ?? false, forKey: "proxy_system_patches_maintenance")
 
+        let localItems = PatchProjectLibrary.load(fileManager: fileManager)
         let oldNames = Set(oldManifest?.patches.map(\.filename) ?? [])
         let newNames = Set(manifest.patches.map(\.filename))
+        let newHashes = Set(manifest.patches.map(\.sha256))
         var changed = 0
 
         for entry in manifest.patches {
@@ -95,9 +97,19 @@ enum PatchRemoteSync {
                 throw PatchRemoteSyncError.invalidSize
             }
 
-            let localURL = root.appendingPathComponent(entry.filename)
-            if let localData = try? PatchProjectLibrary.readPackage(at: localURL),
+            let localURL = root.appendingPathComponent(entry.filename, isDirectory: false)
+            if let matchingLocalURL = matchingLocalURL(
+                for: entry,
+                expectedURL: localURL,
+                localItems: localItems,
+                fileManager: fileManager
+            ),
+               let localData = try? PatchProjectLibrary.readPackage(at: matchingLocalURL),
                sha256(localData) == entry.sha256 {
+                if matchingLocalURL.standardizedFileURL != localURL.standardizedFileURL {
+                    try? localData.write(to: localURL, options: [.atomic, .completeFileProtection])
+                    try? fileManager.removeItem(at: matchingLocalURL)
+                }
                 continue
             }
 
@@ -123,6 +135,7 @@ enum PatchRemoteSync {
                 try PatchProjectLibrary.installRemotePackage(
                     data: data,
                     existingURL: fileManager.fileExists(atPath: localURL.path) ? localURL : nil,
+                    destinationFilename: entry.filename,
                     fileManager: fileManager
                 )
             } catch PatchPackageError.invalidProject {
@@ -131,9 +144,19 @@ enum PatchRemoteSync {
             changed += 1
         }
 
-        for removedName in oldNames.subtracting(newNames) {
-            let localURL = root.appendingPathComponent(removedName)
-            try? fileManager.removeItem(at: localURL)
+        let removedNames = oldNames.subtracting(newNames)
+        let removedHashes = Set(
+            (oldManifest?.patches ?? [])
+                .filter { removedNames.contains($0.filename) }
+                .map(\.sha256)
+        ).subtracting(newHashes)
+        let currentLocalItems = PatchProjectLibrary.load(fileManager: fileManager)
+        for item in currentLocalItems {
+            let localHash = (try? PatchProjectLibrary.readPackage(at: item.packageURL)).map(sha256)
+            let hasRemovedRemoteIdentity = removedNames.contains(item.packageURL.lastPathComponent)
+            guard (localHash.map(removedHashes.contains) ?? false) || hasRemovedRemoteIdentity else { continue }
+            try? PatchProjectLibrary.delete(item, fileManager: fileManager)
+            changed += 1
         }
 
         // The manifest is not secret. Avoid completeFileProtection here so a sync
@@ -141,6 +164,21 @@ enum PatchRemoteSync {
         // successful network request.
         try manifestData.write(to: cachedURL, options: [.atomic])
         return changed
+    }
+
+    private static func matchingLocalURL(
+        for entry: RemotePatchManifest.Entry,
+        expectedURL: URL,
+        localItems: [PatchLibraryItem],
+        fileManager: FileManager
+    ) -> URL? {
+        if fileManager.fileExists(atPath: expectedURL.path) {
+            return expectedURL
+        }
+        return localItems.first { item in
+            guard let localData = try? PatchProjectLibrary.readPackage(at: item.packageURL) else { return false }
+            return sha256(localData) == entry.sha256
+        }?.packageURL
     }
 
     private static func loadManifest(at url: URL, fileManager: FileManager) throws -> RemotePatchManifest {
