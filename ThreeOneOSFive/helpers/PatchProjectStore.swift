@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct PatchStoreAlert: Identifiable {
     let id = UUID()
@@ -75,8 +76,10 @@ final class PatchProjectStore: ObservableObject {
     }
 
     private func applyLoadedState(_ state: LoadedLocalState) {
-        items = state.items
-        isMaintenanceMode = state.isMaintenanceMode
+        withAnimation(.easeOut(duration: 0.22)) {
+            items = state.items
+            isMaintenanceMode = state.isMaintenanceMode
+        }
         isLoading = false
         if pendingLocalReload && isApplyingPatchIDs.isEmpty {
             pendingLocalReload = false
