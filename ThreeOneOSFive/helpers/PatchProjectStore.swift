@@ -48,6 +48,7 @@ final class PatchProjectStore: ObservableObject {
 
     init() {
         reloadInBackground()
+        startAutomaticRemoteSync()
     }
 
     func reload() {
