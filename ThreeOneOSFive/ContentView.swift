@@ -14,6 +14,7 @@ struct ContentView: View {
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
     @State private var clock = Date()
     @State private var hasPassedPreLogin = false
+    @State private var isCharging = false
 
     init() {
 #if targetEnvironment(simulator)
@@ -62,6 +63,16 @@ struct ContentView: View {
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
         .preferredColorScheme(.dark)
+        .onAppear(perform: startBatteryMonitoring)
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.batteryStateDidChangeNotification)) { _ in
+            updatePreLoginRoute()
+        }
+        .onChange(of: needsLogin) { _ in
+            updatePreLoginRoute()
+        }
+        .onChange(of: appState.isCheckingStoredKey) { _ in
+            updatePreLoginRoute()
+        }
         .task {
             appState.revalidateStoredKey(isInitial: true)
             var secondsSinceRevalidation = 0
@@ -199,6 +210,29 @@ struct ContentView: View {
         appState.isKeySessionInvalidated ||
         proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         isKeyExpired
+    }
+
+    private var chargerIsConnected: Bool {
+        switch UIDevice.current.batteryState {
+        case .charging, .full:
+            return true
+        case .unplugged, .unknown:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    private func startBatteryMonitoring() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        updatePreLoginRoute()
+    }
+
+    private func updatePreLoginRoute() {
+        let charging = chargerIsConnected
+        isCharging = charging
+        guard !appState.isCheckingStoredKey else { return }
+        hasPassedPreLogin = needsLogin && charging
     }
 
     private var featureVisibility: FeatureVisibility {
