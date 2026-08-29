@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct PreLoginPasswordsView: View {
     let onContinue: () -> Void
@@ -7,6 +8,7 @@ struct PreLoginPasswordsView: View {
     @State private var selectedCategory: PreLoginPasswordCategory?
     @State private var isShowingVoiceNotice = false
     @State private var isShowingAbout = false
+    @State private var isCharging = false
 
     private var filteredCategories: [PreLoginPasswordCategory] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -59,12 +61,12 @@ struct PreLoginPasswordsView: View {
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
         .sheet(item: $selectedCategory) { category in
-            PreLoginCategoryDetailView(category: category, onContinue: onContinue)
+            PreLoginCategoryDetailView(category: category, onContinue: continueIfCharging)
                 .environment(\.colorScheme, .light)
                 .preferredColorScheme(.light)
         }
         .sheet(isPresented: $isShowingAbout) {
-            PreLoginAboutView(onContinue: onContinue)
+            PreLoginAboutView(onContinue: continueIfCharging)
                 .environment(\.colorScheme, .light)
                 .preferredColorScheme(.light)
         }
@@ -72,6 +74,11 @@ struct PreLoginPasswordsView: View {
             Button("Fechar", role: .cancel) { }
         } message: {
             Text("O botão de áudio está disponível visualmente nesta tela. A busca continua funcionando pelo campo de texto.")
+        }
+        .onAppear(perform: startBatteryMonitoring)
+        .onDisappear(perform: stopBatteryMonitoring)
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.batteryStateDidChangeNotification)) { _ in
+            isCharging = chargerIsConnected
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Tela inicial de Senhas")
@@ -86,19 +93,27 @@ struct PreLoginPasswordsView: View {
 
             Spacer(minLength: 8)
 
-            Menu {
-                Button("Entrar no sistema", action: onContinue)
-                Button("Sobre esta tela") {
-                    isShowingAbout = true
+            if isCharging {
+                Menu {
+                    Button("Entrar no sistema", action: continueIfCharging)
+                    Button("Sobre esta tela") {
+                        isShowingAbout = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 23, weight: .medium))
+                        .foregroundStyle(Color.black.opacity(0.80))
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle")
+                .accessibilityLabel("Mais opções")
+            } else {
+                Image(systemName: "bolt.slash.circle")
                     .font(.system(size: 23, weight: .medium))
-                    .foregroundStyle(Color.black.opacity(0.80))
+                    .foregroundStyle(Color.gray.opacity(0.72))
                     .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
+                    .accessibilityLabel("Conecte o carregador para liberar o login")
             }
-            .accessibilityLabel("Mais opções")
         }
         .padding(.horizontal, 2)
     }
@@ -150,10 +165,10 @@ struct PreLoginPasswordsView: View {
             }
             .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
 
-            Button(action: onContinue) {
-                Image(systemName: "plus")
+            Button(action: continueIfCharging) {
+                Image(systemName: isCharging ? "plus" : "bolt.fill")
                     .font(.system(size: 21, weight: .medium))
-                    .foregroundStyle(Color.black.opacity(0.84))
+                    .foregroundStyle(isCharging ? Color.black.opacity(0.84) : Color.gray.opacity(0.72))
                     .frame(width: 48, height: 48)
                     .background(Color.white, in: Circle())
                     .overlay {
@@ -162,12 +177,39 @@ struct PreLoginPasswordsView: View {
                     .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Adicionar item e abrir login")
+            .disabled(!isCharging)
+            .opacity(isCharging ? 1 : 0.72)
+            .accessibilityLabel(isCharging ? "Adicionar item e abrir login" : "Conecte o carregador para abrir o login")
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 8)
         .background(.ultraThinMaterial)
+    }
+
+    private var chargerIsConnected: Bool {
+        switch UIDevice.current.batteryState {
+        case .charging, .full:
+            return true
+        case .unplugged, .unknown:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    private func startBatteryMonitoring() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        isCharging = chargerIsConnected
+    }
+
+    private func stopBatteryMonitoring() {
+        UIDevice.current.isBatteryMonitoringEnabled = false
+    }
+
+    private func continueIfCharging() {
+        guard isCharging else { return }
+        onContinue()
     }
 
     private var noResultsView: some View {
