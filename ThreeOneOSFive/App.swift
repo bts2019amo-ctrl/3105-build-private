@@ -18,7 +18,6 @@ struct ThreeOneOSFiveApp: App {
                 .environment(\.appLanguage, language)
                 .environment(\.locale, language.locale)
                 .onAppear { appState.detectSupport() }
-                .onOpenURL { url in patchDraftCoordinator.presentImport(url) }
         }
     }
 }
@@ -92,7 +91,7 @@ final class AppState: ObservableObject {
                 let days = max(0, result.daysLeft ?? 0)
                 defaults.set(days, forKey: "proxy_days_left")
 
-                // daysLeft is rounded by the API. Anchor the local countdown only
+                // `daysLeft` is rounded by the API. Anchor the local countdown only
                 // once for this key; periodic revalidation must never reset the clock.
                 let anchorKey = "proxy_key_expiration_anchor"
                 let existingAnchor = defaults.string(forKey: anchorKey)
@@ -121,7 +120,7 @@ final class AppState: ObservableObject {
             exploitStatus = .success(method: "Simulator preview")
         }
 #endif
-        unsupportedMessage = supported ? nil : "iOS (AppInfo.osVersion) (\(AppInfo.osBuild))"
+        unsupportedMessage = supported ? nil : "iOS (AppInfo.osVersion) ((AppInfo.osBuild))"
         if let unsupportedMessage { exploitStatus = .unsupported(unsupportedMessage) }
     }
 }
