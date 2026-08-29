@@ -1,0 +1,21 @@
+# Project TODO
+
+- [x] Usar exclusivamente o endpoint `android.validateKey` para validação e revalidação.
+- [x] Remover payloads de patch embutidos e manter distribuição remota.
+- [x] Implementar bloqueio de sessão por revogação ou expiração durante o uso.
+- [x] Implementar contador contínuo de dias, horas, minutos e segundos.
+- [x] Implementar tema azul premium e interações Liquid Glass.
+- [x] Implementar proteção anti-debugging e anti-tamper nativa.
+- [x] Implementar painel administrativo de patches, manutenção e senhas `.3105` com visualização restrita a administradores.
+- [x] Persistir key, âncora e timestamp absoluto da licença no Keychain para sobreviver à reinstalação.
+- [x] Validar integridade local, ausência de conflitos e coerência do fluxo de persistência; a compilação iOS no macOS permanece pendente no CI.
+- [x] Commitar a correção na branch `run122-blue-liquid-glass` (commit `faba28a`).
+- [x] Disparar o Run #147 e conferir o artefato IPA; o job concluiu com sucesso e o artefato foi inspecionado.
+- [ ] Testar no iPhone: validar a key, anotar o contador, desinstalar, reinstalar e confirmar que o prazo não reinicia.
+- [ ] Testar no iPhone: revogar/expirar a key no painel e confirmar bloqueio automático em até 5 segundos.
+- [x] Migrar workspaces de patches do Documents para Application Support privado, preservando migração segura de dados antigos.
+- [x] Remover a exposição de workspace/exportação de patches na interface do app para impedir cópias visíveis no app Arquivos.
+- [x] Confirmar que File Sharing e abertura de documentos em lugar nenhum permanecem habilitados no Info.plist.
+- [x] Verificar Bundle ID atual e documentar a dependência do bridge antes de qualquer troca.
+- [ ] Compilar e inspecionar a IPA para confirmar ausência de `.3105`, `Patches` e dados visíveis no Documents.
+- [x] Não adicionar app oculto, app disfarçado ou payload não declarado à IPA.
