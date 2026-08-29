@@ -13,6 +13,7 @@ struct ContentView: View {
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
     @State private var clock = Date()
+    @State private var hasPassedPreLogin = false
 
     init() {
 #if targetEnvironment(simulator)
@@ -41,7 +42,13 @@ struct ContentView: View {
                 SecurityBlockedView()
             } else if appState.isCheckingStoredKey {
                 KeyValidationView()
-            } else if appState.isKeySessionInvalidated || proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isKeyExpired {
+            } else if needsLogin && !hasPassedPreLogin {
+                PreLoginPasswordsView {
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        hasPassedPreLogin = true
+                    }
+                }
+            } else if needsLogin {
                 ProxyLoginView()
             } else if horizontalSizeClass == .regular {
                 regularLayout
@@ -186,6 +193,12 @@ struct ContentView: View {
 
     private var isKeyExpired: Bool {
         proxyKeyExpiresAt > 0 && proxyKeyExpiresAt <= clock.timeIntervalSince1970
+    }
+
+    private var needsLogin: Bool {
+        appState.isKeySessionInvalidated ||
+        proxyAccessKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        isKeyExpired
     }
 
     private var featureVisibility: FeatureVisibility {
