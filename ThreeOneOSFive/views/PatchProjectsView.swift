@@ -14,6 +14,7 @@ private enum SkinCharacter: String, CaseIterable, Identifiable {
     case alok
     var id: String { rawValue }
     static let verificationLabels = "DIMITRI_SKIN_SECTION|ALOK_SKIN_SECTION"
+    static let listBehaviorVerification = "PATCH_LIST_NO_SWIPE_DELETE|SELECTION_APPLY_RESTORE"
     static let dimitriVerificationID = "skin-character-dimitri"
     static let alokVerificationID = "skin-character-alok"
     var verificationID: String { rawValue == "dimitri" ? Self.dimitriVerificationID : Self.alokVerificationID }
@@ -131,6 +132,8 @@ struct PatchProjectsView: View {
                 .listStyle(.insetGrouped)
                 .background(Color.clear)
             }
+            .accessibilityIdentifier("patch-list-no-swipe-delete")
+            .accessibilityValue(SkinCharacter.listBehaviorVerification)
             .navigationTitle("Patches")
             .navigationBarTitleDisplayMode(.inline)
             .accessibilityIdentifier("remote-theme-patches")
