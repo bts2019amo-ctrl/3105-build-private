@@ -7,7 +7,7 @@ struct PreLoginPasswordsView: View {
     @State private var searchText = ""
     @State private var selectedCategory: PreLoginPasswordCategory?
     @State private var isShowingVoiceNotice = false
-    @State private var isShowingAbout = false
+    @State private var isShowingGeneratedPasswords = false
     @State private var isCharging = false
 
     private var filteredCategories: [PreLoginPasswordCategory] {
@@ -26,7 +26,7 @@ struct PreLoginPasswordsView: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     header
 
                     if filteredCategories.isEmpty {
@@ -34,10 +34,10 @@ struct PreLoginPasswordsView: View {
                     } else {
                         LazyVGrid(
                             columns: [
-                                GridItem(.flexible(), spacing: 12),
-                                GridItem(.flexible(), spacing: 12)
+                                GridItem(.flexible(), spacing: 8),
+                                GridItem(.flexible(), spacing: 8)
                             ],
-                            spacing: 12
+                            spacing: 8
                         ) {
                             ForEach(filteredCategories) { category in
                                 Button {
@@ -50,9 +50,9 @@ struct PreLoginPasswordsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 112)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .padding(.bottom, 96)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 searchDock
@@ -61,12 +61,7 @@ struct PreLoginPasswordsView: View {
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
         .sheet(item: $selectedCategory) { category in
-            PreLoginCategoryDetailView(category: category, onContinue: continueIfCharging)
-                .environment(\.colorScheme, .light)
-                .preferredColorScheme(.light)
-        }
-        .sheet(isPresented: $isShowingAbout) {
-            PreLoginAboutView(onContinue: continueIfCharging)
+            PreLoginCategoryDetailView(category: category)
                 .environment(\.colorScheme, .light)
                 .preferredColorScheme(.light)
         }
@@ -74,6 +69,16 @@ struct PreLoginPasswordsView: View {
             Button("Fechar", role: .cancel) { }
         } message: {
             Text("O botão de áudio está disponível visualmente nesta tela. A busca continua funcionando pelo campo de texto.")
+        }
+        .alert("Senhas Geradas", isPresented: $isShowingGeneratedPasswords) {
+            Button("Fechar", role: .cancel) { }
+        } message: {
+            Text("Nenhuma senha gerada disponível nesta visualização.")
+        }
+        .alert("Exportação de dados", isPresented: $isShowingExportNotice) {
+            Button("Fechar", role: .cancel) { }
+        } message: {
+            Text("A exportação permanece desativada para manter as informações e os patches privados no app.")
         }
         .onAppear(perform: startBatteryMonitoring)
         .onDisappear(perform: stopBatteryMonitoring)
@@ -94,9 +99,15 @@ struct PreLoginPasswordsView: View {
             Spacer(minLength: 8)
 
             Menu {
-                Button("Entrar no sistema", action: continueIfCharging)
-                Button("Sobre esta tela") {
-                    isShowingAbout = true
+                Button {
+                    isShowingGeneratedPasswords = true
+                } label: {
+                    Label("Senhas Geradas", systemImage: "keyboard")
+                }
+                Button {
+                    isShowingExportNotice = true
+                } label: {
+                    Label("Exportar Dados para Outro App", systemImage: "square.and.arrow.up")
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
@@ -107,7 +118,7 @@ struct PreLoginPasswordsView: View {
             }
             .accessibilityLabel("Mais opções")
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 0)
     }
 
     private var searchDock: some View {
@@ -149,7 +160,7 @@ struct PreLoginPasswordsView: View {
                 .accessibilityLabel("Busca por áudio")
             }
             .padding(.horizontal, 13)
-            .frame(height: 48)
+            .frame(height: 44)
             .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -161,7 +172,7 @@ struct PreLoginPasswordsView: View {
                 Image(systemName: "plus")
                     .font(.system(size: 21, weight: .medium))
                     .foregroundStyle(Color.black.opacity(0.84))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 44, height: 44)
                     .background(Color.white, in: Circle())
                     .overlay {
                         Circle().stroke(Color.black.opacity(0.07), lineWidth: 0.8)
@@ -173,9 +184,9 @@ struct PreLoginPasswordsView: View {
             .opacity(1)
             .accessibilityLabel(isCharging ? "Adicionar item e abrir login" : "Adicionar item e abrir login quando o carregador estiver conectado")
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 8)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 10)
+        .padding(.top, 6)
+        .padding(.bottom, 6)
         .background(.ultraThinMaterial)
     }
 
@@ -348,7 +359,6 @@ private struct PreLoginCategoryCard: View {
 
 private struct PreLoginCategoryDetailView: View {
     let category: PreLoginPasswordCategory
-    let onContinue: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -368,8 +378,6 @@ private struct PreLoginCategoryDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
-                        Button("Abrir tela de login", action: onContinue)
-                            .buttonStyle(.borderedProminent)
                     }
                     .multilineTextAlignment(.center)
                     .padding(28)
@@ -379,11 +387,6 @@ private struct PreLoginCategoryDetailView: View {
                         Label(example, systemImage: category == .wifi ? "wifi" : "person.crop.circle")
                     }
                     .listStyle(.insetGrouped)
-                    .safeAreaInset(edge: .bottom) {
-                        Button("Abrir tela de login", action: onContinue)
-                            .buttonStyle(.borderedProminent)
-                            .padding(.bottom, 8)
-                    }
                 }
             }
             .navigationTitle(category.title)
@@ -398,13 +401,12 @@ private struct PreLoginCategoryDetailView: View {
 }
 
 private struct PreLoginAboutView: View {
-    let onContinue: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 42, weight: .medium))
                     .foregroundStyle(Color.blue)
@@ -416,10 +418,9 @@ private struct PreLoginAboutView: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 16)
 
-                Button("Entrar no sistema", action: onContinue)
-                    .buttonStyle(.borderedProminent)
+                
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(24)
