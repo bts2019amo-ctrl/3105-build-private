@@ -12,6 +12,7 @@ struct ContentView: View {
     @AppStorage(FeatureVisibility.wallpapersStorageKey) private var wallpapersEnabled = true
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
+    @AppStorage("proxy_appearance_mode") private var appearanceMode = "dark"
     @State private var clock = Date()
     @State private var hasPassedPreLogin = false
     @State private var isCharging = false
@@ -62,7 +63,7 @@ struct ContentView: View {
         .background(AppBackgroundView().ignoresSafeArea())
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(appearanceMode == "dark" ? .dark : .light)
         .onAppear(perform: startBatteryMonitoring)
         .onReceive(NotificationCenter.default.publisher(for: UIDevice.batteryStateDidChangeNotification)) { _ in
             updatePreLoginRoute()

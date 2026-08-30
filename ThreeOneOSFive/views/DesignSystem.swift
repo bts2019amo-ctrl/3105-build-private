@@ -49,27 +49,24 @@ enum AppTheme {
 
 
 struct AppBackgroundView: View {
-    
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        
         ZStack {
-            
-            LinearGradient(colors: [Color(red: 0.02, green: 0.06, blue: 0.16), Color(red: 0.03, green: 0.16, blue: 0.34), Color(red: 0.02, green: 0.28, blue: 0.42)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            
-                .ignoresSafeArea()
-            
-            Circle().fill(Color.cyan.opacity(0.24)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
-            
-            Circle().fill(Color.blue.opacity(0.22)).frame(width: 300, height: 300).blur(radius: 70).offset(x: -150, y: 270)
-            
-            Color.black.opacity(0.08).ignoresSafeArea()
-            
+            if colorScheme == .dark {
+                LinearGradient(colors: [Color(red: 0.02, green: 0.06, blue: 0.16), Color(red: 0.03, green: 0.16, blue: 0.34), Color(red: 0.02, green: 0.28, blue: 0.42)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
+                Circle().fill(Color.cyan.opacity(0.24)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
+                Circle().fill(Color.blue.opacity(0.22)).frame(width: 300, height: 300).blur(radius: 70).offset(x: -150, y: 270)
+                Color.black.opacity(0.08).ignoresSafeArea()
+            } else {
+                LinearGradient(colors: [Color(white: 0.98), Color(red: 0.93, green: 0.95, blue: 0.99)], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                Circle().fill(Color.blue.opacity(0.08)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
+            }
         }
-        
         .allowsHitTesting(false)
-        
     }
-    
 }
 
 

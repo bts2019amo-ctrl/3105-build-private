@@ -10,6 +10,7 @@ struct PreLoginPasswordsView: View {
     @State private var isShowingGeneratedPasswords = false
     @State private var isShowingExportNotice = false
     @State private var isCharging = false
+    @AppStorage("proxy_appearance_mode") private var appearanceMode = "light"
 
     private var filteredCategories: [PreLoginPasswordCategory] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -23,7 +24,7 @@ struct PreLoginPasswordsView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.945, green: 0.945, blue: 0.965)
+            (appearanceMode == "dark" ? Color(red: 0.055, green: 0.07, blue: 0.10) : Color(red: 0.945, green: 0.945, blue: 0.965))
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
@@ -59,12 +60,10 @@ struct PreLoginPasswordsView: View {
                 searchDock
             }
         }
-        .environment(\.colorScheme, .light)
-        .preferredColorScheme(.light)
+        .preferredColorScheme(appearanceMode == "dark" ? .dark : .light)
         .sheet(item: $selectedCategory) { category in
             PreLoginCategoryDetailView(category: category)
-                .environment(\.colorScheme, .light)
-                .preferredColorScheme(.light)
+                .preferredColorScheme(appearanceMode == "dark" ? .dark : .light)
         }
         .alert("Busca por voz", isPresented: $isShowingVoiceNotice) {
             Button("Fechar", role: .cancel) { }
@@ -94,6 +93,18 @@ struct PreLoginPasswordsView: View {
         HStack(alignment: .center, spacing: 12) {
             Spacer(minLength: 0)
 
+            Button {
+                appearanceMode = appearanceMode == "dark" ? "light" : "dark"
+            } label: {
+                Image(systemName: appearanceMode == "dark" ? "sun.max.fill" : "moon.fill")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(appearanceMode == "dark" ? Color.white.opacity(0.9) : Color.black.opacity(0.88))
+                    .frame(width: 40, height: 40)
+                    .background(appearanceMode == "dark" ? Color.white.opacity(0.12) : Color.white, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(appearanceMode == "dark" ? "Ativar modo claro" : "Ativar modo escuro")
+
             Menu {
                 Button {
                     isShowingGeneratedPasswords = true
@@ -108,9 +119,9 @@ struct PreLoginPasswordsView: View {
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 21, weight: .bold))
-                    .foregroundStyle(Color.black.opacity(0.88))
+                    .foregroundStyle(appearanceMode == "dark" ? Color.white.opacity(0.9) : Color.black.opacity(0.88))
                     .frame(width: 40, height: 40)
-                    .background(Color.white, in: Circle())
+                    .background(appearanceMode == "dark" ? Color.white.opacity(0.12) : Color.white, in: Circle())
                     .contentShape(Circle())
             }
             .accessibilityLabel("Mais opções")
@@ -123,12 +134,12 @@ struct PreLoginPasswordsView: View {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color.black.opacity(0.92))
+                    .foregroundStyle(appearanceMode == "dark" ? Color.white.opacity(0.9) : Color.black.opacity(0.92))
                     .accessibilityHidden(true)
 
                 TextField("Buscar", text: $searchText)
                     .font(.system(size: 17))
-                    .foregroundStyle(Color.black)
+                    .foregroundStyle(appearanceMode == "dark" ? Color.white : Color.black)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .submitLabel(.search)
@@ -150,7 +161,7 @@ struct PreLoginPasswordsView: View {
                 } label: {
                         Image(systemName: "mic.fill")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.black.opacity(0.92))
+                        .foregroundStyle(appearanceMode == "dark" ? Color.white.opacity(0.9) : Color.black.opacity(0.92))
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
@@ -158,7 +169,7 @@ struct PreLoginPasswordsView: View {
             }
             .padding(.horizontal, 13)
             .frame(height: 44)
-            .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(appearanceMode == "dark" ? Color.white.opacity(0.10) : Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color.black.opacity(0.07), lineWidth: 0.8)
@@ -166,11 +177,11 @@ struct PreLoginPasswordsView: View {
             .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
 
             Button(action: continueIfCharging) {
-                    Text("+")
-                    .font(.system(size: 27, weight: .regular))
-                    .foregroundStyle(Color.black)
+                    Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(appearanceMode == "dark" ? Color.white : Color.black)
                     .frame(width: 44, height: 44)
-                    .background(Color.white, in: Circle())
+                    .background(appearanceMode == "dark" ? Color.white.opacity(0.10) : Color.white, in: Circle())
                     .overlay {
                         Circle().stroke(Color.black.opacity(0.07), lineWidth: 0.8)
                     }
