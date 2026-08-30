@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 struct PatchDraftRequest: Identifiable {
@@ -8,7 +7,6 @@ struct PatchDraftRequest: Identifiable {
 
 enum PatchImportSource: Equatable {
     case file(URL)
-    case remote(URL)
     case invalid
 }
 
@@ -16,35 +14,10 @@ enum PatchImportRoute {
     static let urlScheme = "threeoneosfive"
 
     static func resolve(_ incomingURL: URL) -> PatchImportSource {
-        if incomingURL.isFileURL {
-            return incomingURL.pathExtension.lowercased() == "3105"
-                ? .file(incomingURL)
-                : .invalid
-        }
-
-        if validatedRemoteURL(incomingURL) != nil {
-            return .remote(incomingURL)
-        }
-
-        guard incomingURL.scheme?.lowercased() == urlScheme,
-              incomingURL.host?.lowercased() == "import",
-              let components = URLComponents(url: incomingURL, resolvingAgainstBaseURL: false),
-              let rawRemoteURL = components.queryItems?.first(where: { $0.name == "url" })?.value,
-              let remoteURL = URL(string: rawRemoteURL),
-              validatedRemoteURL(remoteURL) != nil else {
-            return .invalid
-        }
-        return .remote(remoteURL)
-    }
-
-    static func validatedRemoteURL(_ url: URL) -> URL? {
-        guard url.scheme?.lowercased() == "https",
-              url.host != nil,
-              url.user == nil,
-              url.password == nil else {
-            return nil
-        }
-        return url
+        guard incomingURL.isFileURL else { return .invalid }
+        return incomingURL.pathExtension.lowercased() == "3105"
+            ? .file(incomingURL)
+            : .invalid
     }
 }
 

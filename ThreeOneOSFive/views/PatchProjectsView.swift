@@ -16,6 +16,8 @@ struct PatchProjectsView: View {
     @State private var showImporter = false
     @State private var searchText = ""
     @State private var hasStartedInitialSync = false
+    @AppStorage("proxy_appearance_mode") private var appearanceMode = "dark"
+    @State private var selectedTab: GamePatchVersion
     let gameFilter: GamePatchVersion?
 
     private var filteredItems: [PatchLibraryItem] {
@@ -40,22 +42,20 @@ struct PatchProjectsView: View {
         }
     }
 
-    private var freeFireNormalItems: [PatchLibraryItem] {
-        guard gameFilter == nil || gameFilter == .normal else { return [] }
-        return filteredItems.filter { item in
-            item.project?.allBundleIdentifiers.contains("com.dts.freefireth") == true
-        }
+    private var selectedItems: [PatchLibraryItem] {
+        filteredItems.filter { category(for: $0) == selectedTab }
     }
 
-    private var freeFireMaxItems: [PatchLibraryItem] {
-        guard gameFilter == nil || gameFilter == .max else { return [] }
-        return filteredItems.filter { item in
-            item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true
+    private func category(for item: PatchLibraryItem) -> GamePatchVersion {
+        if item.remoteGame == "Free Fire MAX" || item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true {
+            return .max
         }
+        return .normal
     }
 
     init(gameFilter: GamePatchVersion? = nil) {
         self.gameFilter = gameFilter
+        _selectedTab = State(initialValue: gameFilter ?? .normal)
 #if targetEnvironment(simulator)
         _showCreate = State(
             initialValue: ProcessInfo.processInfo.arguments.contains("--simulate-patch-editor")
@@ -66,76 +66,47 @@ struct PatchProjectsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                    AppSearchField(
+                categoryTabs
+                AppSearchField(
                     text: $searchText,
                     prompt: language.text("patch.search"),
                     clearLabel: language.text("common.clear")
                 )
                 Divider()
-                if store.isMaintenanceMode {
-                    VStack(spacing: 12) {
-                        Image(systemName: "wrench.and.screwdriver")
-                            .font(.system(size: 34, weight: .semibold))
-                            .foregroundStyle(AppTheme.accent)
-                        Text("Patches em manutenção")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                        Text("Os patches voltarão a aparecer quando a manutenção terminar.")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(32)
-                } else {
-                    List {
+                List {
                     if store.items.isEmpty && !store.isBusy {
                         emptyState
                             .listRowSeparator(.hidden)
-                    } else if filteredItems.isEmpty && !store.isBusy {
-                        searchEmptyState
-                            .listRowSeparator(.hidden)
-                    } else {
-                        if !freeFireNormalItems.isEmpty {
-                            Section {
-                                ForEach(freeFireNormalItems) { item in
-                                    itemRow(item)
-                                        .padding(.vertical, 6)
-                                        .listRowSeparator(.hidden)
-                                        .listRowBackground(Color.clear)
-                                }
-                                .onDelete { offsets in
-                                    offsets.map { freeFireNormalItems[$0] }.forEach(store.delete)
-                                }
-                            } header: {
-                                sectionHeader("FREE FIRE NORMAL")
+                    } else if selectedItems.isEmpty && !store.isBusy {
+                        Group {
+                            if filteredItems.isEmpty {
+                                searchEmptyState
+                            } else {
+                                categoryEmptyState
                             }
                         }
-
-                        if !freeFireMaxItems.isEmpty {
-                            Section {
-                                ForEach(freeFireMaxItems) { item in
-                                    itemRow(item)
-                                        .padding(.vertical, 6)
-                                        .listRowSeparator(.hidden)
-                                        .listRowBackground(Color.clear)
-                                }
-                                .onDelete { offsets in
-                                    offsets.map { freeFireMaxItems[$0] }.forEach(store.delete)
-                                }
-                            } header: {
-                                sectionHeader("FREE FIRE MAX")
+                        .listRowSeparator(.hidden)
+                    } else {
+                        Section {
+                            ForEach(selectedItems) { item in
+                                itemRow(item)
+                                    .padding(.vertical, 6)
+                                    .listRowSeparator(.hidden)
+                                    .listRowBackground(Color.clear)
                             }
+                            .onDelete { offsets in
+                                offsets.map { selectedItems[$0] }.forEach(store.delete)
+                            }
+                        } header: {
+                            sectionHeader(selectedTab.title)
                         }
                     }
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
-                    .background(Color.clear)
-                }
+                .background(Color.clear)
             }
-            .navigationTitle("HS VIPS")
-            .preferredColorScheme(.dark)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationTitle("Patches")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -144,8 +115,16 @@ struct PatchProjectsView: View {
                     } label: {
                         Image(systemName: store.isSyncing ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
                     }
-                    .accessibilityLabel("Sincronizar patches online")
+                    .accessibilityLabel("Atualizar catálogo remoto")
                     .disabled(store.isSyncing)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        appearanceMode = appearanceMode == "dark" ? "light" : "dark"
+                    } label: {
+                        Image(systemName: appearanceMode == "dark" ? "sun.max.fill" : "moon.fill")
+                    }
+                    .accessibilityLabel(appearanceMode == "dark" ? "Ativar modo claro" : "Ativar modo escuro")
                 }
             }
             .sheet(isPresented: $showImporter) {
@@ -203,6 +182,38 @@ struct PatchProjectsView: View {
                 consumeExternalImport()
             }
         }
+    }
+
+    private var categoryTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(GamePatchVersion.allCases) { tab in
+                    categoryTabButton(tab)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(Color.black.opacity(0.08))
+    }
+
+    private func categoryTabButton(_ tab: GamePatchVersion) -> some View {
+        let isSelected = selectedTab == tab
+        return Button {
+            withAnimation(.easeOut(duration: 0.18)) { selectedTab = tab }
+        } label: {
+            HStack(spacing: 6) {
+                Circle().fill(isSelected ? tab.accent : Color.white.opacity(0.26)).frame(width: 7, height: 7)
+                Text(tab.title).font(.system(size: 13, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(isSelected ? .white : .secondary)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 9)
+            .background(isSelected ? tab.accent.opacity(0.88) : Color.white.opacity(0.08), in: Capsule())
+            .overlay(Capsule().stroke(isSelected ? tab.accent : Color.white.opacity(0.12), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -272,6 +283,22 @@ struct PatchProjectsView: View {
         .padding(.vertical, 64)
     }
 
+    private var categoryEmptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: selectedTab == .max ? "sparkles" : "shippingbox")
+                .font(.system(size: AppTheme.emptyIconSize, weight: .light))
+                .foregroundStyle(selectedTab.accent)
+            Text("Nenhum patch nesta aba")
+                .font(.headline)
+            Text("Os patches publicados para esta categoria aparecerão aqui.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 64)
+    }
+
     private var searchEmptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
@@ -330,10 +357,8 @@ private struct PatchProjectRow: View {
                     .tint(AppTheme.accent)
                     .accessibilityLabel("Aplicando alteração")
             } else if !item.isLocked {
-                Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(isActive ? AppTheme.accent : .secondary)
-                    .accessibilityHidden(true)
+                PatchToggleVisual(isOn: isActive)
+                    .accessibilityLabel(isActive ? "Ativado" : "Desativado")
             }
             if item.summary.isPasswordProtected {
                 Image(systemName: "key.fill")
@@ -360,6 +385,71 @@ private struct PatchProjectRow: View {
         .animation(.easeOut(duration: 0.18), value: isActive)
         .animation(.easeInOut(duration: 0.22), value: item.isLocked)
         .modifier(HSVIPSPulse())
+    }
+}
+
+private struct PatchToggleVisual: View {
+    let isOn: Bool
+
+    var body: some View {
+        ZStack {
+            Capsule(style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: isOn
+                                    ? [AppTheme.accent.opacity(0.78), AppTheme.accent.opacity(0.34)]
+                                    : [Color.white.opacity(0.22), Color.white.opacity(0.06)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: isOn
+                                    ? [Color.white.opacity(0.82), AppTheme.accent.opacity(0.72)]
+                                    : [Color.white.opacity(0.60), Color.white.opacity(0.16)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+                .shadow(color: isOn ? AppTheme.accent.opacity(0.22) : .black.opacity(0.16), radius: 5, y: 2)
+
+            Capsule(style: .continuous)
+                .fill(Color.white.opacity(0.34))
+                .frame(width: 24, height: 4)
+                .blur(radius: 2)
+                .offset(y: -8)
+
+            Circle()
+                .fill(.regularMaterial)
+                .overlay {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.96), Color.white.opacity(0.54)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .overlay {
+                    Circle().stroke(Color.white.opacity(0.82), lineWidth: 0.8)
+                }
+                .frame(width: 22, height: 22)
+                .shadow(color: .black.opacity(0.24), radius: 4, y: 2)
+                .offset(x: isOn ? 10 : -10)
+        }
+        .frame(width: 42, height: 26)
+        .contentShape(Capsule(style: .continuous))
+        .animation(.easeOut(duration: 0.16), value: isOn)
     }
 }
 

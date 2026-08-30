@@ -28,13 +28,11 @@ final class PatchProjectStore: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isSyncing = false
     @Published private(set) var isApplyingPatchIDs: Set<UUID> = []
-    @Published private(set) var isMaintenanceMode = false
     @Published var passwordRequest: PatchPasswordRequest?
     @Published var alert: PatchStoreAlert?
 
     private struct LoadedLocalState: @unchecked Sendable {
         let items: [PatchLibraryItem]
-        let isMaintenanceMode: Bool
     }
 
     private struct PendingUnlock {
@@ -54,13 +52,11 @@ final class PatchProjectStore: ObservableObject {
 
     func reload() {
         items = PatchProjectLibrary.load()
-        isMaintenanceMode = UserDefaults.standard.bool(forKey: "proxy_system_patches_maintenance")
     }
 
     private nonisolated static func loadLocalState() -> LoadedLocalState {
         LoadedLocalState(
-            items: PatchProjectLibrary.load(),
-            isMaintenanceMode: UserDefaults.standard.bool(forKey: "proxy_system_patches_maintenance")
+            items: PatchProjectLibrary.load()
         )
     }
 
@@ -80,7 +76,6 @@ final class PatchProjectStore: ObservableObject {
     private func applyLoadedState(_ state: LoadedLocalState) {
         withAnimation(.easeOut(duration: 0.22)) {
             items = state.items
-            isMaintenanceMode = state.isMaintenanceMode
         }
         isLoading = false
         if pendingLocalReload && isApplyingPatchIDs.isEmpty {
@@ -92,7 +87,7 @@ final class PatchProjectStore: ObservableObject {
         guard automaticSyncTask == nil else { return }
         automaticSyncTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
                 guard !Task.isCancelled else { return }
                 self?.synchronizeRemote(showsCompletion: false)
             }
@@ -121,20 +116,13 @@ final class PatchProjectStore: ObservableObject {
         isSyncing = false
         reloadInBackground()
         if showsCompletion {
-            alert = PatchStoreAlert(
-                titleKey: "common.done",
-                messageKey: "patch.remote_sync_message",
-                messageArgument: String(changed)
-            )
+            alert = PatchStoreAlert(titleKey: "common.done", messageKey: "patch.remote_sync_message", messageArgument: String(changed))
         }
     }
 
     private func failRemoteSync() {
         isSyncing = false
-        alert = PatchStoreAlert(
-            titleKey: "common.failed",
-            messageKey: "patch.remote_sync_failed"
-        )
+        alert = PatchStoreAlert(titleKey: "common.failed", messageKey: "patch.remote_sync_failed")
     }
 
     func create(project: PatchProject, password: String?) {
@@ -209,54 +197,8 @@ final class PatchProjectStore: ObservableObject {
         switch source {
         case .file(let url):
             importPackage(at: url)
-        case .remote(let url):
-            importPackage(fromRemoteURL: url)
         case .invalid:
             present(.invalidImportLink)
-        }
-    }
-
-    private func importPackage(fromRemoteURL remoteURL: URL) {
-        guard !isBusy,
-              PatchImportRoute.validatedRemoteURL(remoteURL) != nil else {
-            if !isBusy { present(.invalidImportLink) }
-            return
-        }
-        isBusy = true
-        Task.detached(priority: .userInitiated) { [weak self] in
-            do {
-                let configuration = URLSessionConfiguration.ephemeral
-                configuration.timeoutIntervalForRequest = 60
-                configuration.timeoutIntervalForResource = 600
-                let session = URLSession(configuration: configuration)
-                defer { session.invalidateAndCancel() }
-
-                let (temporaryURL, response) = try await session.download(from: remoteURL)
-                defer { try? FileManager.default.removeItem(at: temporaryURL) }
-                guard let response = response as? HTTPURLResponse,
-                      (200..<300).contains(response.statusCode),
-                      let finalURL = response.url,
-                      PatchImportRoute.validatedRemoteURL(finalURL) != nil else {
-                    throw PatchPackageError.remoteImportFailed
-                }
-
-                let data = try PatchProjectLibrary.readPackage(at: temporaryURL)
-                let summary = try PatchPackageCodec.inspect(data)
-                let existingURL = await self?.existingPackageURL(for: summary.packageID)
-                if let pending = try Self.persistImportedPackage(
-                    data: data,
-                    summary: summary,
-                    existingURL: existingURL
-                ) {
-                    await self?.requestPassword(pending: pending)
-                } else {
-                    await self?.finishOperation(successMessageKey: "patch.imported_message")
-                }
-            } catch let error as PatchPackageError {
-                await self?.failOperation(error)
-            } catch {
-                await self?.failOperation(.remoteImportFailed)
-            }
         }
     }
 
