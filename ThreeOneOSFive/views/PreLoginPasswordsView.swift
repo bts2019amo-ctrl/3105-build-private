@@ -93,27 +93,19 @@ struct PreLoginPasswordsView: View {
 
             Spacer(minLength: 8)
 
-            if isCharging {
-                Menu {
-                    Button("Entrar no sistema", action: continueIfCharging)
-                    Button("Sobre esta tela") {
-                        isShowingAbout = true
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 23, weight: .medium))
-                        .foregroundStyle(Color.black.opacity(0.80))
-                        .frame(width: 40, height: 40)
-                        .contentShape(Rectangle())
+            Menu {
+                Button("Entrar no sistema", action: continueIfCharging)
+                Button("Sobre esta tela") {
+                    isShowingAbout = true
                 }
-                .accessibilityLabel("Mais opções")
-            } else {
-                Image(systemName: "bolt.slash.circle")
+            } label: {
+                Image(systemName: "ellipsis.circle")
                     .font(.system(size: 23, weight: .medium))
-                    .foregroundStyle(Color.gray.opacity(0.72))
+                    .foregroundStyle(Color.black.opacity(0.80))
                     .frame(width: 40, height: 40)
-                    .accessibilityLabel("Conecte o carregador para liberar o login")
+                    .contentShape(Rectangle())
             }
+            .accessibilityLabel("Mais opções")
         }
         .padding(.horizontal, 2)
     }
@@ -166,9 +158,9 @@ struct PreLoginPasswordsView: View {
             .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
 
             Button(action: continueIfCharging) {
-                Image(systemName: isCharging ? "plus" : "bolt.fill")
+                Image(systemName: "plus")
                     .font(.system(size: 21, weight: .medium))
-                    .foregroundStyle(isCharging ? Color.black.opacity(0.84) : Color.gray.opacity(0.72))
+                    .foregroundStyle(Color.black.opacity(0.84))
                     .frame(width: 48, height: 48)
                     .background(Color.white, in: Circle())
                     .overlay {
@@ -178,8 +170,8 @@ struct PreLoginPasswordsView: View {
             }
             .buttonStyle(.plain)
             .disabled(!isCharging)
-            .opacity(isCharging ? 1 : 0.72)
-            .accessibilityLabel(isCharging ? "Adicionar item e abrir login" : "Conecte o carregador para abrir o login")
+            .opacity(1)
+            .accessibilityLabel(isCharging ? "Adicionar item e abrir login" : "Adicionar item e abrir login quando o carregador estiver conectado")
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
