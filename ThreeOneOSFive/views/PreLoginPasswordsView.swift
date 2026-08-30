@@ -27,7 +27,7 @@ struct PreLoginPasswordsView: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
                     header
 
                     if filteredCategories.isEmpty {
@@ -51,8 +51,8 @@ struct PreLoginPasswordsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
+                .padding(.horizontal, 10)
+                .padding(.top, 2)
                 .padding(.bottom, 96)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -92,12 +92,7 @@ struct PreLoginPasswordsView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
-            Text("Senhas")
-                .font(.system(size: 34, weight: .bold, design: .default))
-                .foregroundStyle(Color.black)
-                .lineLimit(1)
-
-            Spacer(minLength: 8)
+            Spacer(minLength: 0)
 
             Menu {
                 Button {
@@ -111,11 +106,12 @@ struct PreLoginPasswordsView: View {
                     Label("Exportar Dados para Outro App", systemImage: "square.and.arrow.up")
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 23, weight: .medium))
-                    .foregroundStyle(Color.black.opacity(0.80))
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 21, weight: .bold))
+                    .foregroundStyle(Color.black.opacity(0.88))
                     .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
+                    .background(Color.white, in: Circle())
+                    .contentShape(Circle())
             }
             .accessibilityLabel("Mais opções")
         }
@@ -126,8 +122,8 @@ struct PreLoginPasswordsView: View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.gray)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color.black.opacity(0.92))
                     .accessibilityHidden(true)
 
                 TextField("Buscar", text: $searchText)
@@ -152,9 +148,9 @@ struct PreLoginPasswordsView: View {
                 Button {
                     isShowingVoiceNotice = true
                 } label: {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.gray.opacity(0.90))
+                        Image(systemName: "mic.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.black.opacity(0.92))
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
@@ -170,9 +166,9 @@ struct PreLoginPasswordsView: View {
             .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
 
             Button(action: continueIfCharging) {
-                Image(systemName: "plus")
-                    .font(.system(size: 21, weight: .medium))
-                    .foregroundStyle(Color.black.opacity(0.84))
+                    Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(Color.black.opacity(0.92))
                     .frame(width: 44, height: 44)
                     .background(Color.white, in: Circle())
                     .overlay {
@@ -186,16 +182,16 @@ struct PreLoginPasswordsView: View {
             .accessibilityLabel(isCharging ? "Adicionar item e abrir login" : "Adicionar item e abrir login quando o carregador estiver conectado")
         }
         .padding(.horizontal, 10)
-        .padding(.top, 6)
-        .padding(.bottom, 6)
-        .background(.ultraThinMaterial)
+        .padding(.top, 4)
+        .padding(.bottom, 4)
+        .background(Color.clear)
     }
 
     private var chargerIsConnected: Bool {
         switch UIDevice.current.batteryState {
-        case .charging, .full:
+        case .charging:
             return true
-        case .unplugged, .unknown:
+        case .full, .unplugged, .unknown:
             return false
         @unknown default:
             return false
@@ -291,12 +287,12 @@ private enum PreLoginPasswordCategory: String, CaseIterable, Identifiable, Equat
 
     var tint: Color {
         switch self {
-        case .all: return Color.blue
-        case .passkeys: return Color.green
-        case .codes: return Color.orange
-        case .wifi: return Color.cyan
-        case .security: return Color.gray
-        case .deleted: return Color.orange
+        case .all: return Color(red: 0.15, green: 0.43, blue: 0.88)
+        case .passkeys: return Color(red: 0.30, green: 0.72, blue: 0.30)
+        case .codes: return Color(red: 0.95, green: 0.75, blue: 0.12)
+        case .wifi: return Color(red: 0.31, green: 0.64, blue: 0.80)
+        case .security: return Color(red: 0.53, green: 0.54, blue: 0.57)
+        case .deleted: return Color(red: 0.91, green: 0.52, blue: 0.13)
         }
     }
 
@@ -313,17 +309,17 @@ private struct PreLoginCategoryCard: View {
     let category: PreLoginPasswordCategory
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(category.tint.opacity(0.14))
+                    Circle()
+                        .fill(category.tint)
 
                     Image(systemName: category.systemImage)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(category.tint)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(Color.white)
                 }
-                .frame(width: 42, height: 42)
+                .frame(width: 36, height: 36)
 
                 Spacer(minLength: 4)
 
@@ -332,29 +328,17 @@ private struct PreLoginCategoryCard: View {
                     .foregroundStyle(Color.gray)
             }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(category.title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.black.opacity(0.86))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-
-                Text(category.subtitle)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.gray)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.86)
-            }
+            Text(category.title)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(Color.black.opacity(0.92))
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
-        .background(Color.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 0.8)
-        }
-        .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, minHeight: 88, alignment: .topLeading)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
