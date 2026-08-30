@@ -11,6 +11,7 @@ struct RemotePatchManifest: Decodable {
         let version: String
         let category: String
         let kind: String
+        let character: String?
         let fileName: String
         let size: Int
         let downloadUrl: URL
@@ -86,6 +87,7 @@ enum PatchRemoteSync {
         var active = Set<String>()
         var categories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
         var kinds = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchKinds") as? [String: String] ?? [:]
+        var characters = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCharacters") as? [String: String] ?? [:]
         var icons = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchIcons") as? [String: String] ?? [:]
         var changed = 0
         for entry in manifest.patches {
@@ -102,6 +104,7 @@ enum PatchRemoteSync {
             managed.insert(entry.fileName)
             categories[entry.fileName] = entry.category
             kinds[entry.fileName] = ["patch", "skin"].contains(entry.kind) ? entry.kind : "patch"
+            if let character = entry.character, ["dimitri", "alok"].contains(character) { characters[entry.fileName] = character } else { characters.removeValue(forKey: entry.fileName) }
             if let iconURL = entry.iconUrl, iconURL.scheme?.lowercased() == "https" {
                 let (iconData, iconResponse) = try await session.data(from: iconURL)
                 if let iconHTTP = iconResponse as? HTTPURLResponse, (200..<300).contains(iconHTTP.statusCode), let iconType = iconHTTP.mimeType, ["image/png", "image/jpeg", "image/webp"].contains(iconType) {
@@ -117,12 +120,14 @@ enum PatchRemoteSync {
             managed.remove(filename)
             categories.removeValue(forKey: filename)
             kinds.removeValue(forKey: filename)
+            characters.removeValue(forKey: filename)
             if let iconPath = icons.removeValue(forKey: filename) { PatchProjectLibrary.removeRemoteIcon(named: URL(fileURLWithPath: iconPath).lastPathComponent) }
             changed += 1
         }
         UserDefaults.standard.set(Array(managed).sorted(), forKey: managedKey)
         UserDefaults.standard.set(categories, forKey: "3105.managedRemotePatchCategories")
         UserDefaults.standard.set(kinds, forKey: "3105.managedRemotePatchKinds")
+        UserDefaults.standard.set(characters, forKey: "3105.managedRemotePatchCharacters")
         UserDefaults.standard.set(icons, forKey: "3105.managedRemotePatchIcons")
         return changed
     }

@@ -9,6 +9,14 @@ private enum PatchContentKind: String, CaseIterable, Identifiable {
     var title: String { self == .skin ? "Skin" : "Patches" }
 }
 
+private enum SkinCharacter: String, CaseIterable, Identifiable {
+    case dimitri
+    case alok
+    var id: String { rawValue }
+    var title: String { rawValue == "dimitri" ? "Dimitri" : "Alok" }
+    var icon: String { rawValue == "dimitri" ? "shield.lefthalf.filled" : "music.note" }
+}
+
 private enum PatchPackagePickerPolicy {
     static let packageType = UTType(filenameExtension: "3105") ?? .data
     static let allowedContentTypes: [UTType] = [packageType, .data]
@@ -27,6 +35,7 @@ struct PatchProjectsView: View {
     @AppStorage(AppTheme.accentColorStorageKey) private var accentColorHex = AppTheme.defaultAccentHex
     @State private var selectedTab: GamePatchVersion
     @State private var selectedKind: PatchContentKind = .patch
+    @State private var selectedCharacter: SkinCharacter = .dimitri
     let gameFilter: GamePatchVersion?
 
     private var filteredItems: [PatchLibraryItem] {
@@ -52,7 +61,10 @@ struct PatchProjectsView: View {
     }
 
     private var selectedItems: [PatchLibraryItem] {
-        filteredItems.filter { category(for: $0) == selectedTab && ($0.remoteKind ?? "patch") == selectedKind.rawValue }
+        filteredItems.filter { item in
+            guard category(for: item) == selectedTab, (item.remoteKind ?? "patch") == selectedKind.rawValue else { return false }
+            return selectedKind == .patch || item.remoteCharacter == selectedCharacter.rawValue
+        }
     }
 
     private func category(for item: PatchLibraryItem) -> GamePatchVersion {
@@ -77,6 +89,7 @@ struct PatchProjectsView: View {
             VStack(spacing: 0) {
                 categoryTabs
                 kindTabs
+                if selectedKind == .skin { characterTabs }
                 accentColorRow
                 AppSearchField(
                     text: $searchText,
@@ -109,7 +122,7 @@ struct PatchProjectsView: View {
                                 offsets.map { selectedItems[$0] }.forEach(store.delete)
                             }
                         } header: {
-                            sectionHeader(selectedTab.title)
+                            sectionHeader(selectedKind == .skin ? "\(selectedTab.title) · \(selectedCharacter.title)" : selectedTab.title)
                         }
                     }
                 }
@@ -241,7 +254,7 @@ struct PatchProjectsView: View {
         HStack(spacing: 10) {
             ForEach(PatchContentKind.allCases) { kind in
                 Button {
-                    withAnimation(.easeOut(duration: 0.18)) { selectedKind = kind }
+                    withAnimation(.easeOut(duration: 0.18)) { selectedKind = kind; if kind == .skin { selectedCharacter = .dimitri } }
                 } label: {
                     Label(kind.title, systemImage: kind == .skin ? "sparkles" : "shippingbox")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
@@ -257,6 +270,30 @@ struct PatchProjectsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
+    }
+
+    private var characterTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(SkinCharacter.allCases) { character in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.18)) { selectedCharacter = character }
+                    } label: {
+                        Label(character.title, systemImage: character.icon)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(selectedCharacter == character ? AppTheme.accent : .secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(selectedCharacter == character ? AppTheme.accent.opacity(0.16) : Color.white.opacity(0.06), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selectedCharacter == character ? .isSelected : [])
+                    .accessibilityLabel("Skin \(character.title)")
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
     }
 
     private func categoryTabButton(_ tab: GamePatchVersion) -> some View {
@@ -348,7 +385,7 @@ struct PatchProjectsView: View {
             Image(systemName: selectedTab == .max ? "sparkles" : "shippingbox")
                 .font(.system(size: AppTheme.emptyIconSize, weight: .light))
                 .foregroundStyle(selectedTab.accent)
-            Text("Nenhum patch nesta aba")
+            Text(selectedKind == .skin ? "Nenhuma skin de \(selectedCharacter.title) nesta aba" : "Nenhum patch nesta aba")
                 .font(.headline)
             Text("Os patches publicados para esta categoria aparecerão aqui.")
                 .font(.subheadline)

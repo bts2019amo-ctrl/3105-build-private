@@ -7,6 +7,7 @@ struct PatchLibraryItem: Identifiable {
     var packageURL: URL
     var remoteGame: String?
     var remoteKind: String?
+    var remoteCharacter: String?
     var remoteIconURL: URL?
 
     var id: UUID { summary.packageID }
@@ -52,6 +53,7 @@ enum PatchProjectLibrary {
 
         let remoteCategories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
         let remoteKinds = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchKinds") as? [String: String] ?? [:]
+        let remoteCharacters = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCharacters") as? [String: String] ?? [:]
         let remoteIcons = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchIcons") as? [String: String] ?? [:]
         var byID: [UUID: PatchLibraryItem] = [:]
         for url in urls where url.pathExtension.lowercased() == "3105" {
@@ -73,6 +75,7 @@ enum PatchProjectLibrary {
                     packageURL: url,
                     remoteGame: remoteCategories[url.lastPathComponent].map { $0 == "max" ? "Free Fire MAX" : "Free Fire Normal" },
                     remoteKind: remoteKinds[url.lastPathComponent] ?? "patch",
+                    remoteCharacter: remoteCharacters[url.lastPathComponent],
                     remoteIconURL: remoteIcons[url.lastPathComponent].flatMap(URL.init(fileURLWithPath:)),
                 )
                 if summary.schemaVersion >= 2, let project = decoded?.project {
