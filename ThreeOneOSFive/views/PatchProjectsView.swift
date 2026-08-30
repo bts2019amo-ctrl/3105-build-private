@@ -2,6 +2,13 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
+private enum PatchContentKind: String, CaseIterable, Identifiable {
+    case patch
+    case skin
+    var id: String { rawValue }
+    var title: String { self == .skin ? "Skin" : "Patches" }
+}
+
 private enum PatchPackagePickerPolicy {
     static let packageType = UTType(filenameExtension: "3105") ?? .data
     static let allowedContentTypes: [UTType] = [packageType, .data]
@@ -18,6 +25,8 @@ struct PatchProjectsView: View {
     @State private var hasStartedInitialSync = false
     @AppStorage("proxy_appearance_mode") private var appearanceMode = "dark"
     @State private var selectedTab: GamePatchVersion
+    @State private var selectedKind: PatchContentKind = .patch
+    @State private var selectedProjectID: UUID?
     let gameFilter: GamePatchVersion?
 
     private var filteredItems: [PatchLibraryItem] {
@@ -43,7 +52,7 @@ struct PatchProjectsView: View {
     }
 
     private var selectedItems: [PatchLibraryItem] {
-        filteredItems.filter { category(for: $0) == selectedTab }
+        filteredItems.filter { category(for: $0) == selectedTab && ($0.remoteKind ?? "patch") == selectedKind.rawValue }
     }
 
     private func category(for item: PatchLibraryItem) -> GamePatchVersion {
@@ -67,6 +76,7 @@ struct PatchProjectsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 categoryTabs
+                kindTabs
                 AppSearchField(
                     text: $searchText,
                     prompt: language.text("patch.search"),
@@ -126,6 +136,9 @@ struct PatchProjectsView: View {
                     }
                     .accessibilityLabel(appearanceMode == "dark" ? "Ativar modo claro" : "Ativar modo escuro")
                 }
+            }
+            .sheet(item: $selectedProjectID) { projectID in
+                PatchProjectDetailView(store: store, projectID: projectID)
             }
             .sheet(isPresented: $showImporter) {
                 FileDocumentPicker(
@@ -197,6 +210,28 @@ struct PatchProjectsView: View {
         .background(Color.black.opacity(0.08))
     }
 
+    private var kindTabs: some View {
+        HStack(spacing: 10) {
+            ForEach(PatchContentKind.allCases) { kind in
+                Button {
+                    withAnimation(.easeOut(duration: 0.18)) { selectedKind = kind }
+                } label: {
+                    Label(kind.title, systemImage: kind == .skin ? "sparkles" : "shippingbox")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(selectedKind == kind ? AppTheme.accent : .secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(selectedKind == kind ? AppTheme.accent.opacity(0.16) : Color.white.opacity(0.06), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selectedKind == kind ? .isSelected : [])
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+
     private func categoryTabButton(_ tab: GamePatchVersion) -> some View {
         let isSelected = selectedTab == tab
         return Button {
@@ -233,11 +268,7 @@ struct PatchProjectsView: View {
     @ViewBuilder
     private func itemRow(_ item: PatchLibraryItem) -> some View {
         Button {
-            if item.isLocked {
-                store.requestUnlock(for: item)
-            } else {
-                store.setEnabled(!store.isActive(item), for: item)
-            }
+            selectedProjectID = item.id
         } label: {
             PatchProjectRow(
                 item: item,
@@ -334,8 +365,12 @@ private struct PatchProjectRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AppRowIcon(systemName: item.isLocked ? "lock.doc.fill" : "shippingbox.fill")
-                .foregroundStyle(AppTheme.accent)
+            if let iconURL = item.remoteIconURL, let image = UIImage(contentsOfFile: iconURL.path) {
+                Image(uiImage: image).resizable().scaledToFill().frame(width: 42, height: 42).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            } else {
+                AppRowIcon(systemName: item.remoteKind == "skin" ? "sparkles" : (item.isLocked ? "lock.doc.fill" : "shippingbox.fill"))
+                    .foregroundStyle(AppTheme.accent)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.project?.name ?? language.text("patch.locked_project"))
                      .font(.system(size: 15, weight: .black, design: .rounded))
@@ -357,8 +392,11 @@ private struct PatchProjectRow: View {
                     .tint(AppTheme.accent)
                     .accessibilityLabel("Aplicando alteração")
             } else if !item.isLocked {
-                PatchToggleVisual(isOn: isActive)
-                    .accessibilityLabel(isActive ? "Ativado" : "Desativado")
+                Label("Selecionar", systemImage: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.accent)
+                    .labelStyle(.iconOnly)
+                    .accessibilityLabel("Selecionar patch")
             }
             if item.summary.isPasswordProtected {
                 Image(systemName: "key.fill")

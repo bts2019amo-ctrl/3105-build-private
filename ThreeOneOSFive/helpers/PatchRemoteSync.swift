@@ -7,9 +7,11 @@ struct RemotePatchManifest: Decodable {
         let description: String
         let version: String
         let category: String
+        let kind: String
         let fileName: String
         let size: Int
         let downloadUrl: URL
+        let iconUrl: URL?
     }
     let schemaVersion: Int
     let revision: String
@@ -60,6 +62,8 @@ enum PatchRemoteSync {
         var managed = Set(UserDefaults.standard.stringArray(forKey: managedKey) ?? [])
         var active = Set<String>()
         var categories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
+        var kinds = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchKinds") as? [String: String] ?? [:]
+        var icons = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchIcons") as? [String: String] ?? [:]
         var changed = 0
         for entry in manifest.patches {
             guard ["normal", "max"].contains(entry.category), entry.downloadUrl.scheme?.lowercased() == "https", entry.downloadUrl.user == nil, entry.downloadUrl.password == nil, entry.fileName.lowercased().hasSuffix(".3105") else { throw PatchRemoteSyncError.invalidPatch(entry.fileName) }
@@ -74,16 +78,29 @@ enum PatchRemoteSync {
             try PatchProjectLibrary.installImportedPackage(data: packageData, decoded: decoded, summary: summary, existingURL: existing, destinationFilename: entry.fileName)
             managed.insert(entry.fileName)
             categories[entry.fileName] = entry.category
+            kinds[entry.fileName] = ["patch", "skin"].contains(entry.kind) ? entry.kind : "patch"
+            if let iconURL = entry.iconUrl, iconURL.scheme?.lowercased() == "https" {
+                let (iconData, iconResponse) = try await session.data(from: iconURL)
+                if let iconHTTP = iconResponse as? HTTPURLResponse, (200..<300).contains(iconHTTP.statusCode), let iconType = iconHTTP.mimeType, ["image/png", "image/jpeg", "image/webp"].contains(iconType) {
+                    let iconName = "\(entry.fileName).\(iconType == "image/png" ? "png" : iconType == "image/webp" ? "webp" : "jpg")"
+                    let iconURL = try PatchProjectLibrary.saveRemoteIcon(data: iconData, fileName: iconName)
+                    icons[entry.fileName] = iconURL.path
+                }
+            }
             changed += 1
         }
         for filename in managed.subtracting(active) {
             try? PatchProjectLibrary.removeManagedPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
+            kinds.removeValue(forKey: filename)
+            if let iconPath = icons.removeValue(forKey: filename) { PatchProjectLibrary.removeRemoteIcon(named: URL(fileURLWithPath: iconPath).lastPathComponent) }
             changed += 1
         }
         UserDefaults.standard.set(Array(managed).sorted(), forKey: managedKey)
         UserDefaults.standard.set(categories, forKey: "3105.managedRemotePatchCategories")
+        UserDefaults.standard.set(kinds, forKey: "3105.managedRemotePatchKinds")
+        UserDefaults.standard.set(icons, forKey: "3105.managedRemotePatchIcons")
         return changed
     }
 }

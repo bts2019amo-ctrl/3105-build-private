@@ -6,6 +6,8 @@ struct PatchLibraryItem: Identifiable {
     var contentKey: Data?
     var packageURL: URL
     var remoteGame: String?
+    var remoteKind: String?
+    var remoteIconURL: URL?
 
     var id: UUID { summary.packageID }
     var isLocked: Bool { project == nil }
@@ -49,6 +51,8 @@ enum PatchProjectLibrary {
               ) else { return [] }
 
         let remoteCategories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
+        let remoteKinds = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchKinds") as? [String: String] ?? [:]
+        let remoteIcons = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchIcons") as? [String: String] ?? [:]
         var byID: [UUID: PatchLibraryItem] = [:]
         for url in urls where url.pathExtension.lowercased() == "3105" {
             do {
@@ -68,6 +72,8 @@ enum PatchProjectLibrary {
                     contentKey: decoded?.contentKey,
                     packageURL: url,
                     remoteGame: remoteCategories[url.lastPathComponent].map { $0 == "max" ? "Free Fire MAX" : "Free Fire Normal" },
+                    remoteKind: remoteKinds[url.lastPathComponent] ?? "patch",
+                    remoteIconURL: remoteIcons[url.lastPathComponent].flatMap(URL.init(fileURLWithPath:)),
                 )
                 if summary.schemaVersion >= 2, let project = decoded?.project {
                     do {
@@ -108,6 +114,20 @@ enum PatchProjectLibrary {
                 log("patch: skipped bundled package \(sourceURL.lastPathComponent)")
             }
         }
+    }
+
+    static func saveRemoteIcon(data: Data, fileName: String) throws -> URL {
+        let root = try packageRootURL().appendingPathComponent("Icons", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let safe = fileName.replacingOccurrences(of: "[^A-Za-z0-9._-]", with: "-", options: .regularExpression)
+        let destination = root.appendingPathComponent(safe)
+        try data.write(to: destination, options: .atomic)
+        return destination
+    }
+
+    static func removeRemoteIcon(named fileName: String) {
+        guard let root = try? packageRootURL().appendingPathComponent("Icons", isDirectory: true) else { return }
+        try? FileManager.default.removeItem(at: root.appendingPathComponent(fileName))
     }
 
     static func readPackage(at url: URL) throws -> Data {
