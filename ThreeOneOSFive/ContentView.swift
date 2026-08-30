@@ -220,9 +220,9 @@ struct ContentView: View {
 
     private var chargerIsConnected: Bool {
         switch UIDevice.current.batteryState {
-        case .charging, .full:
+        case .charging:
             return true
-        case .unplugged, .unknown:
+        case .full, .unplugged, .unknown:
             return false
         @unknown default:
             return false
