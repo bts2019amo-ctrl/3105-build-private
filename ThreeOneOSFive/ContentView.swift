@@ -43,7 +43,7 @@ struct ContentView: View {
                 SecurityBlockedView()
             } else if appState.isCheckingStoredKey {
                 KeyValidationView()
-            } else if needsLogin && !hasPassedPreLogin {
+            } else if !isCharging {
                 PreLoginPasswordsView {
                     withAnimation(.easeOut(duration: 0.18)) {
                         hasPassedPreLogin = true
@@ -74,7 +74,9 @@ struct ContentView: View {
             updatePreLoginRoute()
         }
         .task {
-            appState.revalidateStoredKey(isInitial: true)
+            if isCharging {
+                appState.revalidateStoredKey(isInitial: true)
+            }
             var secondsSinceRevalidation = 0
 
             while !Task.isCancelled {
@@ -93,14 +95,18 @@ struct ContentView: View {
 
                 if secondsSinceRevalidation >= 5 {
                     secondsSinceRevalidation = 0
-                    appState.revalidateStoredKey()
+                    if isCharging {
+                        appState.revalidateStoredKey()
+                    }
                 }
             }
         }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
                 clock = Date()
-                appState.revalidateStoredKey()
+                if isCharging {
+                    appState.revalidateStoredKey()
+                }
             }
         }
         .onChange(of: patchDraftCoordinator.request?.id) { requestID in
