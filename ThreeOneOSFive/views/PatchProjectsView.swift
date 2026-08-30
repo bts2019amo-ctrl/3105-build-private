@@ -14,6 +14,9 @@ private enum SkinCharacter: String, CaseIterable, Identifiable {
     case alok
     var id: String { rawValue }
     static let verificationLabels = "DIMITRI_SKIN_SECTION|ALOK_SKIN_SECTION"
+    static let dimitriVerificationID = "skin-character-dimitri"
+    static let alokVerificationID = "skin-character-alok"
+    var verificationID: String { rawValue == "dimitri" ? Self.dimitriVerificationID : Self.alokVerificationID }
     var title: String { rawValue == "dimitri" ? "Dimitri" : "Alok" }
     var icon: String { rawValue == "dimitri" ? "shield.lefthalf.filled" : "music.note" }
 }
@@ -290,7 +293,7 @@ struct PatchProjectsView: View {
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selectedCharacter == character ? .isSelected : [])
                     .accessibilityLabel("Skin \(character.title)")
-                    .accessibilityIdentifier("skin-character-\(character.rawValue)")
+                    .accessibilityIdentifier(character.verificationID)
                 }
             }
             .padding(.horizontal, 16)
