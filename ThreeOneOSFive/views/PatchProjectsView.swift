@@ -137,8 +137,13 @@ struct PatchProjectsView: View {
                     .accessibilityLabel(appearanceMode == "dark" ? "Ativar modo claro" : "Ativar modo escuro")
                 }
             }
-            .sheet(item: $selectedProjectID) { projectID in
-                PatchProjectDetailView(store: store, projectID: projectID)
+            .sheet(isPresented: Binding(
+                get: { selectedProjectID != nil },
+                set: { if !$0 { selectedProjectID = nil } }
+            )) {
+                if let projectID = selectedProjectID {
+                    PatchProjectDetailView(store: store, projectID: projectID)
+                }
             }
             .sheet(isPresented: $showImporter) {
                 FileDocumentPicker(
@@ -284,14 +289,12 @@ struct PatchProjectsView: View {
         .accessibilityLabel(
             item.isLocked
                 ? language.text("patch.tap_to_unlock")
-                : (store.isActive(item) ? "Desativar patch" : "Ativar patch")
+                : "Selecionar \(item.remoteKind == "skin" ? "skin" : "patch") \(item.project?.name ?? "")"
         )
         .accessibilityHint(
             item.isLocked
-                ? "Toque para desbloquear este patch"
-                : (store.isActive(item)
-                    ? "Toque para restaurar o arquivo original"
-                    : "Toque para aplicar este patch")
+                ? "Toque para desbloquear este item"
+                : "Toque para abrir os detalhes e escolher aplicar ou restaurar"
         )
     }
 
