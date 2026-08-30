@@ -169,7 +169,7 @@ struct ProxyLoginView: View {
             }
             .foregroundStyle(.white)
             .background(
-                LinearGradient(colors: [AppTheme.accent.opacity(canSubmit ? 1 : 0.48), Color.blue.opacity(canSubmit ? 0.72 : 0.32)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                LinearGradient(colors: [AppTheme.accent.opacity(canSubmit ? 1 : 0.48), AppTheme.accent.opacity(canSubmit ? 0.72 : 0.32)], startPoint: .topLeading, endPoint: .bottomTrailing),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.white.opacity(0.24), lineWidth: 1))

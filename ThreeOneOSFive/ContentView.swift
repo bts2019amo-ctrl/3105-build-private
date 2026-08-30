@@ -58,6 +58,7 @@ struct ContentView: View {
                 compactLayout
             }
         }
+        .id("remote-theme-\(accentColorHex)")
         .tint(Color(hex: accentColorHex))
         .imageScale(.small)
         .background(AppBackgroundView().ignoresSafeArea())
@@ -90,7 +91,7 @@ struct ContentView: View {
                 secondsSinceRevalidation += 1
                 secondsSinceThemeRefresh += 1
 
-                if secondsSinceThemeRefresh >= 2 && isCharging && !needsLogin {
+                if secondsSinceThemeRefresh >= 1 && isCharging && !needsLogin {
                     secondsSinceThemeRefresh = 0
                     try? await PatchRemoteSync.synchronizeTheme()
                 }
