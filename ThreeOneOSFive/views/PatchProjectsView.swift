@@ -195,13 +195,6 @@ struct PatchProjectsView: View {
         }
     }
 
-    private var accentColorBinding: Binding<Color> {
-        Binding(
-            get: { Color(hex: accentColorHex) },
-            set: { accentColorHex = $0.hexString }
-        )
-    }
-
     private var accentColorRow: some View {
         HStack(spacing: 12) {
             Image(systemName: "paintpalette.fill")
@@ -214,9 +207,16 @@ struct PatchProjectsView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            ColorPicker("Cor do app", selection: accentColorBinding, supportsOpacity: false)
-                .labelsHidden()
-                .accessibilityLabel("Escolher cor dos patches e do app")
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color(hex: accentColorHex))
+                    .frame(width: 24, height: 24)
+                    .overlay(Circle().stroke(Color.white.opacity(0.55), lineWidth: 1))
+                Text("Sincronizada do painel")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Cor remota atual: \(accentColorHex)")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

@@ -1,6 +1,9 @@
 import Foundation
 
 struct RemotePatchManifest: Decodable {
+    struct Theme: Decodable {
+        let accentColor: String
+    }
     struct Entry: Decodable {
         let id: Int
         let name: String
@@ -15,6 +18,7 @@ struct RemotePatchManifest: Decodable {
     }
     let schemaVersion: Int
     let revision: String
+    let theme: Theme?
     let patches: [Entry]
 }
 
@@ -59,6 +63,9 @@ enum PatchRemoteSync {
         }
         let manifest = try JSONDecoder().decode(RemotePatchManifest.self, from: data)
         guard manifest.schemaVersion == 1 else { throw PatchRemoteSyncError.invalidManifest }
+        if let accentColor = manifest.theme?.accentColor, accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil {
+            UserDefaults.standard.set(accentColor.uppercased(), forKey: "3105_accent_color_hex")
+        }
         var managed = Set(UserDefaults.standard.stringArray(forKey: managedKey) ?? [])
         var active = Set<String>()
         var categories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
