@@ -13,7 +13,7 @@ private enum SkinCharacter: String, CaseIterable, Identifiable {
     case dimitri
     case alok
     var id: String { rawValue }
-    static let verificationLabels = "Dimitri|Alok"
+    static let verificationLabels = "DIMITRI_SKIN_SECTION|ALOK_SKIN_SECTION"
     var title: String { rawValue == "dimitri" ? "Dimitri" : "Alok" }
     var icon: String { rawValue == "dimitri" ? "shield.lefthalf.filled" : "music.note" }
 }
