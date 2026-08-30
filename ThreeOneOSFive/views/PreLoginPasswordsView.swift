@@ -6,7 +6,7 @@ struct PreLoginPasswordsView: View {
 
     @State private var searchText = ""
     @State private var selectedCategory: PreLoginPasswordCategory?
-    @State privafte var isShowingVoiceNotice = false
+    @State private var isShowingVoiceNotice = false
     @State private var isShowingGeneratedPasswords = false
     @State private var isShowingExportNotice = false
     @State private var isCharging = false
