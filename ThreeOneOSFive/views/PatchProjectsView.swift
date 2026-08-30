@@ -15,6 +15,7 @@ struct PatchProjectsView: View {
     @State private var showCreate = false
     @State private var showImporter = false
     @State private var searchText = ""
+    @State private var hasStartedInitialSync = false
     @AppStorage("proxy_appearance_mode") private var appearanceMode = "dark"
     @State private var selectedTab: GamePatchVersion
     let gameFilter: GamePatchVersion?
@@ -46,7 +47,7 @@ struct PatchProjectsView: View {
     }
 
     private func category(for item: PatchLibraryItem) -> GamePatchVersion {
-        if item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true {
+        if item.remoteGame == "Free Fire MAX" || item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true {
             return .max
         }
         return .normal
@@ -110,6 +111,15 @@ struct PatchProjectsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        store.synchronizeRemote()
+                    } label: {
+                        Image(systemName: store.isSyncing ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
+                    }
+                    .accessibilityLabel("Atualizar catálogo remoto")
+                    .disabled(store.isSyncing)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
                         appearanceMode = appearanceMode == "dark" ? "light" : "dark"
                     } label: {
                         Image(systemName: appearanceMode == "dark" ? "sun.max.fill" : "moon.fill")
@@ -164,6 +174,9 @@ struct PatchProjectsView: View {
             }
             .onAppear {
                 consumeExternalImport()
+                guard !hasStartedInitialSync else { return }
+                hasStartedInitialSync = true
+                store.synchronizeRemote(showsCompletion: false)
             }
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()

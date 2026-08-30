@@ -5,6 +5,7 @@ struct PatchLibraryItem: Identifiable {
     var project: PatchProject?
     var contentKey: Data?
     var packageURL: URL
+    var remoteGame: String?
 
     var id: UUID { summary.packageID }
     var isLocked: Bool { project == nil }
@@ -47,6 +48,7 @@ enum PatchProjectLibrary {
                 options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
               ) else { return [] }
 
+        let remoteCategories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
         var byID: [UUID: PatchLibraryItem] = [:]
         for url in urls where url.pathExtension.lowercased() == "3105" {
             do {
@@ -65,6 +67,7 @@ enum PatchProjectLibrary {
                     project: decoded?.project,
                     contentKey: decoded?.contentKey,
                     packageURL: url,
+                    remoteGame: remoteCategories[url.lastPathComponent].map { $0 == "max" ? "Free Fire MAX" : "Free Fire Normal" },
                 )
                 if summary.schemaVersion >= 2, let project = decoded?.project {
                     do {
@@ -187,6 +190,13 @@ enum PatchProjectLibrary {
             }
             throw error
         }
+    }
+
+    static func removeManagedPackage(named filename: String, fileManager: FileManager = .default) throws {
+        let root = try packageRootURL(fileManager: fileManager)
+        let url = root.appendingPathComponent(filename)
+        guard url.pathExtension.lowercased() == "3105", !filename.contains("/") else { return }
+        if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
     }
 
     static func delete(_ item: PatchLibraryItem, fileManager: FileManager = .default) throws {

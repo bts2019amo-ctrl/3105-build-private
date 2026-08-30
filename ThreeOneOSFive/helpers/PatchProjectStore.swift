@@ -26,6 +26,7 @@ final class PatchProjectStore: ObservableObject {
     @Published private(set) var items: [PatchLibraryItem] = []
     @Published private(set) var isBusy = false
     @Published private(set) var isLoading = false
+    @Published private(set) var isSyncing = false
     @Published private(set) var isApplyingPatchIDs: Set<UUID> = []
     @Published var passwordRequest: PatchPasswordRequest?
     @Published var alert: PatchStoreAlert?
@@ -42,8 +43,11 @@ final class PatchProjectStore: ObservableObject {
 
     private var pendingUnlock: PendingUnlock?
     private var pendingLocalReload = false
+    private var automaticSyncTask: Task<Void, Never>?
+
     init() {
         reloadInBackground()
+        startAutomaticRemoteSync()
     }
 
     func reload() {
@@ -77,6 +81,48 @@ final class PatchProjectStore: ObservableObject {
         if pendingLocalReload && isApplyingPatchIDs.isEmpty {
             pendingLocalReload = false
         }
+    }
+
+    func startAutomaticRemoteSync() {
+        guard automaticSyncTask == nil else { return }
+        automaticSyncTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                guard !Task.isCancelled else { return }
+                self?.synchronizeRemote(showsCompletion: false)
+            }
+        }
+    }
+
+    func stopAutomaticRemoteSync() {
+        automaticSyncTask?.cancel()
+        automaticSyncTask = nil
+    }
+
+    func synchronizeRemote(showsCompletion: Bool = true) {
+        guard !isSyncing else { return }
+        isSyncing = true
+        Task.detached(priority: .utility) { [weak self] in
+            do {
+                let changed = try await PatchRemoteSync.synchronize()
+                await self?.finishRemoteSync(changed: changed, showsCompletion: showsCompletion)
+            } catch {
+                await self?.failRemoteSync()
+            }
+        }
+    }
+
+    private func finishRemoteSync(changed: Int, showsCompletion: Bool) {
+        isSyncing = false
+        reloadInBackground()
+        if showsCompletion {
+            alert = PatchStoreAlert(titleKey: "common.done", messageKey: "patch.remote_sync_message", messageArgument: String(changed))
+        }
+    }
+
+    private func failRemoteSync() {
+        isSyncing = false
+        alert = PatchStoreAlert(titleKey: "common.failed", messageKey: "patch.remote_sync_failed")
     }
 
     func create(project: PatchProject, password: String?) {
