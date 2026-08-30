@@ -38,6 +38,7 @@ enum PatchRemoteSyncError: LocalizedError {
 
 enum PatchRemoteSync {
     static let manifestURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/manifest.json")!
+    static let themeURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/theme.json")!
     private static let managedKey = "3105.managedRemotePatchFilenames"
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
@@ -48,6 +49,21 @@ enum PatchRemoteSync {
         configuration.httpAdditionalHeaders = ["Accept": "application/json", "Cache-Control": "no-cache"]
         return URLSession(configuration: configuration)
     }()
+
+    static func synchronizeTheme() async throws {
+        var request = URLRequest(url: themeURL)
+        request.httpMethod = "GET"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 10
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
+        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String }
+        let theme = try JSONDecoder().decode(ThemeResponse.self, from: data)
+        guard theme.schemaVersion == 1, theme.accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil else { return }
+        UserDefaults.standard.set(theme.accentColor.uppercased(), forKey: "3105_accent_color_hex")
+    }
 
     static func synchronize() async throws -> Int {
         var request = URLRequest(url: manifestURL)

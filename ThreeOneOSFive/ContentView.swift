@@ -79,6 +79,7 @@ struct ContentView: View {
                 appState.revalidateStoredKey(isInitial: true)
             }
             var secondsSinceRevalidation = 0
+            var secondsSinceThemeRefresh = 0
 
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -87,6 +88,12 @@ struct ContentView: View {
                 let now = Date()
                 clock = now
                 secondsSinceRevalidation += 1
+                secondsSinceThemeRefresh += 1
+
+                if secondsSinceThemeRefresh >= 2 && isCharging && !needsLogin {
+                    secondsSinceThemeRefresh = 0
+                    try? await PatchRemoteSync.synchronizeTheme()
+                }
 
                 if proxyKeyExpiresAt > 0 && proxyKeyExpiresAt <= now.timeIntervalSince1970 {
                     appState.invalidateKeySession()
