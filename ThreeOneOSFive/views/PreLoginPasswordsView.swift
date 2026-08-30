@@ -166,8 +166,8 @@ struct PreLoginPasswordsView: View {
             .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
 
             Button(action: continueIfCharging) {
-                    Image(systemName: "plus")
-                    .font(.system(size: 22, weight: .regular))
+                    Text("+")
+                    .font(.system(size: 27, weight: .regular))
                     .foregroundStyle(Color.black)
                     .frame(width: 44, height: 44)
                     .background(Color.white, in: Circle())
