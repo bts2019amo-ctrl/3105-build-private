@@ -12,6 +12,7 @@ struct ContentView: View {
     @AppStorage(FeatureVisibility.wallpapersStorageKey) private var wallpapersEnabled = true
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
+    @AppStorage(AppTheme.accentColorStorageKey) private var accentColorHex = AppTheme.defaultAccentHex
     @State private var clock = Date()
     @State private var hasPassedPreLogin = false
     @State private var isCharging = false
@@ -57,7 +58,7 @@ struct ContentView: View {
                 compactLayout
             }
         }
-        .tint(AppTheme.accent)
+        .tint(Color(hex: accentColorHex))
         .imageScale(.small)
         .background(AppBackgroundView().ignoresSafeArea())
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)

@@ -24,9 +24,9 @@ struct PatchProjectsView: View {
     @State private var searchText = ""
     @State private var hasStartedInitialSync = false
     @AppStorage("proxy_appearance_mode") private var appearanceMode = "dark"
+    @AppStorage(AppTheme.accentColorStorageKey) private var accentColorHex = AppTheme.defaultAccentHex
     @State private var selectedTab: GamePatchVersion
     @State private var selectedKind: PatchContentKind = .patch
-    @State private var selectedProjectID: UUID?
     let gameFilter: GamePatchVersion?
 
     private var filteredItems: [PatchLibraryItem] {
@@ -77,6 +77,7 @@ struct PatchProjectsView: View {
             VStack(spacing: 0) {
                 categoryTabs
                 kindTabs
+                accentColorRow
                 AppSearchField(
                     text: $searchText,
                     prompt: language.text("patch.search"),
@@ -137,14 +138,6 @@ struct PatchProjectsView: View {
                     .accessibilityLabel(appearanceMode == "dark" ? "Ativar modo claro" : "Ativar modo escuro")
                 }
             }
-            .sheet(isPresented: Binding(
-                get: { selectedProjectID != nil },
-                set: { if !$0 { selectedProjectID = nil } }
-            )) {
-                if let projectID = selectedProjectID {
-                    PatchProjectDetailView(store: store, projectID: projectID)
-                }
-            }
             .sheet(isPresented: $showImporter) {
                 FileDocumentPicker(
                     allowedContentTypes: PatchPackagePickerPolicy.allowedContentTypes,
@@ -200,6 +193,34 @@ struct PatchProjectsView: View {
                 consumeExternalImport()
             }
         }
+    }
+
+    private var accentColorBinding: Binding<Color> {
+        Binding(
+            get: { Color(hex: accentColorHex) },
+            set: { accentColorHex = $0.hexString }
+        )
+    }
+
+    private var accentColorRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "paintpalette.fill")
+                .foregroundStyle(AppTheme.accent)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Cor do app")
+                    .font(.subheadline.weight(.semibold))
+                Text("Nomes dos patches e destaques")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            ColorPicker("Cor do app", selection: accentColorBinding, supportsOpacity: false)
+                .labelsHidden()
+                .accessibilityLabel("Escolher cor dos patches e do app")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
     }
 
     private var categoryTabs: some View {
@@ -273,7 +294,11 @@ struct PatchProjectsView: View {
     @ViewBuilder
     private func itemRow(_ item: PatchLibraryItem) -> some View {
         Button {
-            selectedProjectID = item.id
+            guard !item.isLocked else {
+                store.requestUnlock(for: item)
+                return
+            }
+            store.setEnabled(!store.isActive(item), for: item)
         } label: {
             PatchProjectRow(
                 item: item,
@@ -289,12 +314,12 @@ struct PatchProjectsView: View {
         .accessibilityLabel(
             item.isLocked
                 ? language.text("patch.tap_to_unlock")
-                : "Selecionar \(item.remoteKind == "skin" ? "skin" : "patch") \(item.project?.name ?? "")"
+                : (store.isActive(item) ? "Desmarcar e restaurar \(item.remoteKind == "skin" ? "skin" : "patch")" : "Selecionar e aplicar \(item.remoteKind == "skin" ? "skin" : "patch")")
         )
         .accessibilityHint(
             item.isLocked
                 ? "Toque para desbloquear este item"
-                : "Toque para abrir os detalhes e escolher aplicar ou restaurar"
+                : (store.isActive(item) ? "Toque para desmarcar e restaurar o original" : "Toque para selecionar e aplicar")
         )
     }
 
@@ -395,11 +420,7 @@ private struct PatchProjectRow: View {
                     .tint(AppTheme.accent)
                     .accessibilityLabel("Aplicando alteração")
             } else if !item.isLocked {
-                Label("Selecionar", systemImage: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.accent)
-                    .labelStyle(.iconOnly)
-                    .accessibilityLabel("Selecionar patch")
+                PatchSelectionVisual(isSelected: isActive)
             }
             if item.summary.isPasswordProtected {
                 Image(systemName: "key.fill")
@@ -429,68 +450,14 @@ private struct PatchProjectRow: View {
     }
 }
 
-private struct PatchToggleVisual: View {
-    let isOn: Bool
+private struct PatchSelectionVisual: View {
+    let isSelected: Bool
 
     var body: some View {
-        ZStack {
-            Capsule(style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    Capsule(style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: isOn
-                                    ? [AppTheme.accent.opacity(0.78), AppTheme.accent.opacity(0.34)]
-                                    : [Color.white.opacity(0.22), Color.white.opacity(0.06)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-                .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: isOn
-                                    ? [Color.white.opacity(0.82), AppTheme.accent.opacity(0.72)]
-                                    : [Color.white.opacity(0.60), Color.white.opacity(0.16)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
-                .shadow(color: isOn ? AppTheme.accent.opacity(0.22) : .black.opacity(0.16), radius: 5, y: 2)
-
-            Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.34))
-                .frame(width: 24, height: 4)
-                .blur(radius: 2)
-                .offset(y: -8)
-
-            Circle()
-                .fill(.regularMaterial)
-                .overlay {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.96), Color.white.opacity(0.54)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-                .overlay {
-                    Circle().stroke(Color.white.opacity(0.82), lineWidth: 0.8)
-                }
-                .frame(width: 22, height: 22)
-                .shadow(color: .black.opacity(0.24), radius: 4, y: 2)
-                .offset(x: isOn ? 10 : -10)
-        }
-        .frame(width: 42, height: 26)
-        .contentShape(Capsule(style: .continuous))
-        .animation(.easeOut(duration: 0.16), value: isOn)
+        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 25, weight: .semibold))
+            .foregroundStyle(isSelected ? AppTheme.accent : Color.secondary.opacity(0.82))
+            .accessibilityLabel(isSelected ? "Selecionado; toque para restaurar o original" : "Não selecionado; toque para aplicar")
     }
 }
 

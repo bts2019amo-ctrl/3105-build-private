@@ -3,20 +3,12 @@ import SwiftUI
 
 
 enum AppTheme {
-    
-    static let accent = Color(
-        
-        uiColor: UIColor { traits in
-                          
-            traits.userInterfaceStyle == .dark
-                          
-                ? UIColor(red: 0.22, green: 0.52, blue: 1.00, alpha: 1.00)
-                          
-                : UIColor(red: 0.04, green: 0.38, blue: 0.90, alpha: 1.00)
-                          
-                         }
-        
-    )
+    static let accentColorStorageKey = "3105_accent_color_hex"
+    static let defaultAccentHex = "#3885FF"
+
+    static var accent: Color {
+        Color(hex: UserDefaults.standard.string(forKey: accentColorStorageKey) ?? defaultAccentHex)
+    }
     
     static let pageBackground = Color.clear
     
@@ -49,18 +41,14 @@ enum AppTheme {
 
 
 struct AppBackgroundView: View {
-    
     var body: some View {
-        
         ZStack {
-            
-            LinearGradient(colors: [Color(red: 0.02, green: 0.06, blue: 0.16), Color(red: 0.03, green: 0.16, blue: 0.34), Color(red: 0.02, green: 0.28, blue: 0.42)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: [Color.black.opacity(0.80), AppTheme.accent.opacity(0.28), Color.black.opacity(0.60)], startPoint: .topLeading, endPoint: .bottomTrailing)
             
                 .ignoresSafeArea()
             
-            Circle().fill(Color.cyan.opacity(0.24)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
-            
-            Circle().fill(Color.blue.opacity(0.22)).frame(width: 300, height: 300).blur(radius: 70).offset(x: -150, y: 270)
+            Circle().fill(AppTheme.accent.opacity(0.30)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
+            Circle().fill(AppTheme.accent.opacity(0.20)).frame(width: 300, height: 300).blur(radius: 70).offset(x: -150, y: 270)
             
             Color.black.opacity(0.08).ignoresSafeArea()
             
@@ -73,6 +61,29 @@ struct AppBackgroundView: View {
 }
 
 
+
+extension Color {
+    init(hex: String) {
+        let cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
+        var value: UInt64 = 0
+        Scanner(string: cleaned).scanHexInt64(&value)
+        self.init(
+            red: Double((value >> 16) & 0xFF) / 255,
+            green: Double((value >> 8) & 0xFF) / 255,
+            blue: Double(value & 0xFF) / 255
+        )
+    }
+
+    var hexString: String {
+        let color = UIColor(self)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return AppTheme.defaultAccentHex }
+        return String(format: "#%02X%02X%02X", Int(red * 255), Int(green * 255), Int(blue * 255))
+    }
+}
 
 struct AppRowIcon: View {
     
