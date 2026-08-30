@@ -150,7 +150,7 @@ struct PreLoginPasswordsView: View {
                 } label: {
                         Image(systemName: "mic.fill")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.black)
+                        .foregroundStyle(Color.black.opacity(0.92))
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
