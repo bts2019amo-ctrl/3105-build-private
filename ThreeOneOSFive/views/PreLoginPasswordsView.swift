@@ -6,7 +6,7 @@ struct PreLoginPasswordsView: View {
 
     @State private var searchText = ""
     @State private var selectedCategory: PreLoginPasswordCategory?
-    @State private var isShowingVoiceNotice = false
+    @State privafte var isShowingVoiceNotice = false
     @State private var isShowingGeneratedPasswords = false
     @State private var isShowingExportNotice = false
     @State private var isCharging = false
@@ -150,7 +150,7 @@ struct PreLoginPasswordsView: View {
                 } label: {
                         Image(systemName: "mic.fill")
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.black.opacity(0.92))
+                        .foregroundStyle(Color.white)
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
@@ -158,7 +158,7 @@ struct PreLoginPasswordsView: View {
             }
             .padding(.horizontal, 13)
             .frame(height: 44)
-            .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.black, in: Circle())
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color.black.opacity(0.07), lineWidth: 0.8)
@@ -168,9 +168,9 @@ struct PreLoginPasswordsView: View {
             Button(action: continueIfCharging) {
                     Image(systemName: "plus")
                     .font(.system(size: 22, weight: .regular))
-                    .foregroundStyle(Color.black.opacity(0.92))
+                    .foregroundStyle(Color.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.white, in: Circle())
+                    .background(Color.black, in: Circle())
                     .overlay {
                         Circle().stroke(Color.black.opacity(0.07), lineWidth: 0.8)
                     }
