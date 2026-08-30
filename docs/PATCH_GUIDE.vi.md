@@ -55,7 +55,7 @@ Nên đóng ứng dụng đích trong lúc áp dụng hoặc khôi phục patch.
 
 - **Xuất** luôn đồng bộ nội dung mới nhất trong workspace trước khi chia sẻ file `.3105`.
 - Có thể nhập từ ứng dụng Tệp bằng cách mở hoặc chia sẻ gói `.3105` sang 3105.
-- Website có thể mở app bằng `threeoneosfive://import?url=<URL HTTPS đã percent-encode>`. App chỉ nhận URL HTTPS không chứa tài khoản hoặc mật khẩu nhúng.
+- Chỉ nhập patch từ ứng dụng Tệp hoặc chia sẻ gói `.3105` cục bộ với 3105. Không chấp nhận URL gói từ xa.
 - Trên máy hoặc lần cài mới, gói có bảo vệ sẽ hỏi mật khẩu một lần. 3105 lưu content key đã mở khóa trong Keychain; file xuất ra vẫn được mã hóa và luôn gắn với mật khẩu ban đầu.
 - Patch v1 cũ vẫn sử dụng được. App không âm thầm ghi lại gói v1 thành v2 chỉ vì người dùng mở nó.
 

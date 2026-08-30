@@ -149,7 +149,6 @@ enum PatchPackageError: Error, Equatable {
     case applyFailed
     case restoreFailed
     case invalidImportLink
-    case remoteImportFailed
 }
 
 extension PatchPackageError: LocalizedError {
@@ -169,7 +168,6 @@ extension PatchPackageError: LocalizedError {
         case .applyFailed: return "patch.error.apply"
         case .restoreFailed: return "patch.error.restore"
         case .invalidImportLink: return "patch.error.invalid_import_link"
-        case .remoteImportFailed: return "patch.error.remote_import"
         }
     }
 

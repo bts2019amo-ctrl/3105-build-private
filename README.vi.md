@@ -43,7 +43,7 @@ Xem [hướng dẫn Patch workspace đầy đủ](docs/PATCH_GUIDE.vi.md).
 
 - Duyệt dữ liệu ứng dụng theo **bundle identifier**, không phụ thuộc UUID container của từng máy.
 - Trình quản lý tệp có tìm kiếm, xem trước, chia sẻ, nhập nhiều tệp, sao chép, di chuyển, dán, đổi tên, xóa, tạo tệp/thư mục, nén ZIP và xử lý trùng tên.
-- Tạo và nhập dự án patch `.3105` theo bundle, hỗ trợ nhiều quy tắc, tệp/thư mục, mật khẩu tùy chọn và nhập từ Files hoặc liên kết website bảo mật.
+- Tạo và nhập dự án patch `.3105` theo bundle, hỗ trợ nhiều quy tắc, tệp/thư mục, mật khẩu tùy chọn và chỉ nhập từ Files.
 - Dọn dẹp giới hạn trong `Library/Caches` và `tmp`, hỗ trợ sắp xếp dung lượng và chọn nhiều ứng dụng, luôn hiển thị cảnh báo trước khi xóa.
 - Nhập gói hình nền `.tendies`, xác thực payload và chỉ reset nội dung do 3105 cài đặt.
 - 3105 không cài jailbreak, bootstrap hay daemon thường trú và không inject mã vào ứng dụng bên thứ ba. Do ứng dụng vẫn dùng khai thác thiết bị và có thể sửa dữ liệu app, không thể bảo đảm vượt qua mọi cơ chế kiểm tra tính toàn vẹn hoặc phát hiện jailbreak.

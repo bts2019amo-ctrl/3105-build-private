@@ -55,7 +55,7 @@ Keep the target app closed while applying or restoring a patch. Do not rename th
 
 - **Export** synchronizes the latest workspace contents before sharing the `.3105` file.
 - Import from Files by opening or sharing a `.3105` package to 3105.
-- A website may open the app with `threeoneosfive://import?url=<percent-encoded HTTPS URL>`. Only HTTPS package URLs without embedded credentials are accepted.
+- Import patches only from the local Files picker or by sharing a local `.3105` package with 3105. Remote package URLs are not accepted.
 - On a new device or installation, a protected package asks for its password once. 3105 stores the unlocked content key in Keychain; the exported package remains encrypted and tied to its original password.
 - Legacy v1 packages remain supported. Opening an existing v1 package does not silently rewrite it as v2.
 

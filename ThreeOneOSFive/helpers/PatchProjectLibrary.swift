@@ -5,8 +5,6 @@ struct PatchLibraryItem: Identifiable {
     var project: PatchProject?
     var contentKey: Data?
     var packageURL: URL
-    var remoteGame: String?
-    var iconData: Data?
 
     var id: UUID { summary.packageID }
     var isLocked: Bool { project == nil }
@@ -62,14 +60,11 @@ enum PatchProjectLibrary {
                 } else {
                     decoded = try PatchPackageCodec.decode(data, password: nil)
                 }
-                let remoteEntry = PatchRemoteSync.cachedEntry(for: url.lastPathComponent, fileManager: fileManager)
                 let item = PatchLibraryItem(
                     summary: summary,
                     project: decoded?.project,
                     contentKey: decoded?.contentKey,
                     packageURL: url,
-                    remoteGame: remoteEntry?.game,
-                    iconData: PatchRemoteSync.cachedIconData(for: url.lastPathComponent, fileManager: fileManager)
                 )
                 if summary.schemaVersion >= 2, let project = decoded?.project {
                     do {
@@ -150,25 +145,6 @@ enum PatchProjectLibrary {
         }
         try data.write(to: destination, options: [.atomic, .completeFileProtection])
         return destination
-    }
-
-    static func installRemotePackage(
-        data: Data,
-        existingURL: URL?,
-        destinationFilename: String,
-        fileManager: FileManager = .default
-    ) throws {
-        let summary = try PatchPackageCodec.inspect(data)
-        guard !summary.isPasswordProtected else { throw PatchPackageError.invalidProject }
-        let decoded = try PatchPackageCodec.decode(data, password: nil)
-        try installImportedPackage(
-            data: data,
-            decoded: decoded,
-            summary: summary,
-            existingURL: existingURL,
-            destinationFilename: destinationFilename,
-            fileManager: fileManager
-        )
     }
 
     static func installImportedPackage(

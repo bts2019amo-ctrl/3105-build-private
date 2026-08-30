@@ -15,7 +15,6 @@ struct PatchProjectsView: View {
     @State private var showCreate = false
     @State private var showImporter = false
     @State private var searchText = ""
-    @State private var hasStartedInitialSync = false
     @AppStorage("proxy_appearance_mode") private var appearanceMode = "dark"
     @State private var selectedTab: GamePatchVersion
     let gameFilter: GamePatchVersion?
@@ -47,8 +46,7 @@ struct PatchProjectsView: View {
     }
 
     private func category(for item: PatchLibraryItem) -> GamePatchVersion {
-        if item.remoteGame == "Free Fire Skin" { return .skin }
-        if item.remoteGame == "Free Fire MAX" || item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true {
+        if item.project?.allBundleIdentifiers.contains("com.dts.freefiremax") == true {
             return .max
         }
         return .normal
@@ -74,22 +72,7 @@ struct PatchProjectsView: View {
                     clearLabel: language.text("common.clear")
                 )
                 Divider()
-                if store.isMaintenanceMode {
-                    VStack(spacing: 12) {
-                        Image(systemName: "wrench.and.screwdriver")
-                            .font(.system(size: 34, weight: .semibold))
-                            .foregroundStyle(AppTheme.accent)
-                        Text("Patches em manutenção")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                        Text("Os patches voltarão a aparecer quando a manutenção terminar.")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(32)
-                } else {
-                    List {
+                List {
                     if store.items.isEmpty && !store.isBusy {
                         emptyState
                             .listRowSeparator(.hidden)
@@ -120,8 +103,7 @@ struct PatchProjectsView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
-                    .background(Color.clear)
-                }
+                .background(Color.clear)
             }
             .navigationTitle("Patches")
             .navigationBarTitleDisplayMode(.inline)
@@ -133,15 +115,6 @@ struct PatchProjectsView: View {
                         Image(systemName: appearanceMode == "dark" ? "sun.max.fill" : "moon.fill")
                     }
                     .accessibilityLabel(appearanceMode == "dark" ? "Ativar modo claro" : "Ativar modo escuro")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        store.synchronizeRemote()
-                    } label: {
-                        Image(systemName: store.isSyncing ? "arrow.triangle.2.circlepath" : "arrow.down.circle")
-                    }
-                    .accessibilityLabel("Sincronizar patches online")
-                    .disabled(store.isSyncing)
                 }
             }
             .sheet(isPresented: $showImporter) {
@@ -191,9 +164,6 @@ struct PatchProjectsView: View {
             }
             .onAppear {
                 consumeExternalImport()
-                guard !hasStartedInitialSync else { return }
-                hasStartedInitialSync = true
-                store.synchronizeRemote(showsCompletion: false)
             }
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()
@@ -349,17 +319,8 @@ private struct PatchProjectRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if let iconData = item.iconData, let icon = UIImage(data: iconData) {
-                Image(uiImage: icon)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 42, height: 42)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color.white.opacity(0.18), lineWidth: 1))
-            } else {
-                AppRowIcon(systemName: item.isLocked ? "lock.doc.fill" : "shippingbox.fill")
-                    .foregroundStyle(AppTheme.accent)
-            }
+            AppRowIcon(systemName: item.isLocked ? "lock.doc.fill" : "shippingbox.fill")
+                .foregroundStyle(AppTheme.accent)
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.project?.name ?? language.text("patch.locked_project"))
                      .font(.system(size: 15, weight: .black, design: .rounded))
