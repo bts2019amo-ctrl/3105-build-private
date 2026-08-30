@@ -41,14 +41,14 @@ struct ContentView: View {
         Group {
             if appState.isSecurityCompromised {
                 SecurityBlockedView()
-            } else if appState.isCheckingStoredKey {
-                KeyValidationView()
             } else if !isCharging {
                 PreLoginPasswordsView {
                     withAnimation(.easeOut(duration: 0.18)) {
                         hasPassedPreLogin = true
                     }
                 }
+            } else if appState.isCheckingStoredKey {
+                KeyValidationView()
             } else if needsLogin {
                 ProxyLoginView()
             } else if horizontalSizeClass == .regular {
