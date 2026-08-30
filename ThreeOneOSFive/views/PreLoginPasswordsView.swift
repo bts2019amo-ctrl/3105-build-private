@@ -394,7 +394,7 @@ private struct PreLoginAboutView: View {
             VStack(spacing: 12) {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 42, weight: .medium))
-                    .foregroundStyle(Color.blue)
+                    .foregroundStyle(AppTheme.accent)
 
                 Text("Acesso protegido")
                     .font(.title2.weight(.bold))
