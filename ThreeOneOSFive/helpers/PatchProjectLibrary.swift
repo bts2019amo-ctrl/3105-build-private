@@ -5,6 +5,8 @@ struct PatchLibraryItem: Identifiable {
     var project: PatchProject?
     var contentKey: Data?
     var packageURL: URL
+    var remoteGame: String?
+    var iconData: Data?
 
     var id: UUID { summary.packageID }
     var isLocked: Bool { project == nil }
@@ -60,11 +62,14 @@ enum PatchProjectLibrary {
                 } else {
                     decoded = try PatchPackageCodec.decode(data, password: nil)
                 }
+                let remoteEntry = PatchRemoteSync.cachedEntry(for: url.lastPathComponent, fileManager: fileManager)
                 let item = PatchLibraryItem(
                     summary: summary,
                     project: decoded?.project,
                     contentKey: decoded?.contentKey,
-                    packageURL: url
+                    packageURL: url,
+                    remoteGame: remoteEntry?.game,
+                    iconData: PatchRemoteSync.cachedIconData(for: url.lastPathComponent, fileManager: fileManager)
                 )
                 if summary.schemaVersion >= 2, let project = decoded?.project {
                     do {
