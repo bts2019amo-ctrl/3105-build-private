@@ -122,9 +122,6 @@ struct PatchProjectsView: View {
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
                             }
-                            .onDelete { offsets in
-                                offsets.map { selectedItems[$0] }.forEach(store.delete)
-                            }
                         } header: {
                             sectionHeader(selectedKind == .skin ? "\(selectedTab.title) · \(selectedCharacter.title)" : selectedTab.title)
                         }
