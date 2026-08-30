@@ -13,6 +13,7 @@ private enum SkinCharacter: String, CaseIterable, Identifiable {
     case dimitri
     case alok
     var id: String { rawValue }
+    static let verificationLabels = "Dimitri|Alok"
     var title: String { rawValue == "dimitri" ? "Dimitri" : "Alok" }
     var icon: String { rawValue == "dimitri" ? "shield.lefthalf.filled" : "music.note" }
 }
@@ -289,11 +290,14 @@ struct PatchProjectsView: View {
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selectedCharacter == character ? .isSelected : [])
                     .accessibilityLabel("Skin \(character.title)")
+                    .accessibilityIdentifier("skin-character-\(character.rawValue)")
                 }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
+        .accessibilityIdentifier("skin-character-sections")
+        .accessibilityValue(SkinCharacter.verificationLabels)
     }
 
     private func categoryTabButton(_ tab: GamePatchVersion) -> some View {
