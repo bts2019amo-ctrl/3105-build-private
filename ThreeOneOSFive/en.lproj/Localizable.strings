@@ -462,5 +462,5 @@
 
 
 // Remote patch synchronization
-"patch.remote_sync_failed" = "Could not update patches. Check your connection and try again.";
+"patch.remote_sync_failed" = "Could not update patches: %@";
 "patch.remote_sync_message" = "%@ patch(es) updated.";

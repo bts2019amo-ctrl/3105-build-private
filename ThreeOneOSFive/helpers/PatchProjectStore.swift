@@ -107,7 +107,7 @@ final class PatchProjectStore: ObservableObject {
                 let changed = try await PatchRemoteSync.synchronize()
                 await self?.finishRemoteSync(changed: changed, showsCompletion: showsCompletion)
             } catch {
-                await self?.failRemoteSync()
+                await self?.failRemoteSync(error)
             }
         }
     }
@@ -120,9 +120,14 @@ final class PatchProjectStore: ObservableObject {
         }
     }
 
-    private func failRemoteSync() {
+    private func failRemoteSync(_ error: Error) {
         isSyncing = false
-        alert = PatchStoreAlert(titleKey: "common.failed", messageKey: "patch.remote_sync_failed")
+        let detail = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        alert = PatchStoreAlert(
+            titleKey: "common.failed",
+            messageKey: "patch.remote_sync_failed",
+            messageArgument: detail.isEmpty ? "Erro desconhecido" : detail
+        )
     }
 
     func create(project: PatchProject, password: String?) {

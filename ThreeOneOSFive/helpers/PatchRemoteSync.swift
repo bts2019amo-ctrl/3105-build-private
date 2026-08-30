@@ -17,11 +17,17 @@ struct RemotePatchManifest: Decodable {
 }
 
 enum PatchRemoteSyncError: LocalizedError {
-    case unavailable
+    case unavailable(statusCode: Int)
     case invalidManifest
-    case invalidPatch
+    case invalidPatch(String)
 
-    var errorDescription: String? { "Não foi possível atualizar o catálogo remoto." }
+    var errorDescription: String? {
+        switch self {
+        case .unavailable(let statusCode): return "Servidor do catálogo respondeu HTTP \(statusCode)."
+        case .invalidManifest: return "O manifesto do catálogo está inválido ou incompatível."
+        case .invalidPatch(let fileName): return "O patch \(fileName) não passou na validação de segurança."
+        }
+    }
 }
 
 enum PatchRemoteSync {
@@ -45,7 +51,10 @@ enum PatchRemoteSync {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { throw PatchRemoteSyncError.unavailable }
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw PatchRemoteSyncError.unavailable(statusCode: statusCode)
+        }
         let manifest = try JSONDecoder().decode(RemotePatchManifest.self, from: data)
         guard manifest.schemaVersion == 1 else { throw PatchRemoteSyncError.invalidManifest }
         var managed = Set(UserDefaults.standard.stringArray(forKey: managedKey) ?? [])
@@ -53,10 +62,10 @@ enum PatchRemoteSync {
         var categories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
         var changed = 0
         for entry in manifest.patches {
-            guard ["normal", "max"].contains(entry.category), entry.downloadUrl.scheme?.lowercased() == "https", entry.downloadUrl.user == nil, entry.downloadUrl.password == nil, entry.fileName.lowercased().hasSuffix(".3105") else { throw PatchRemoteSyncError.invalidPatch }
+            guard ["normal", "max"].contains(entry.category), entry.downloadUrl.scheme?.lowercased() == "https", entry.downloadUrl.user == nil, entry.downloadUrl.password == nil, entry.fileName.lowercased().hasSuffix(".3105") else { throw PatchRemoteSyncError.invalidPatch(entry.fileName) }
             active.insert(entry.fileName)
-            let (packageData, packageResponse) = try await URLSession.shared.data(from: entry.downloadUrl)
-            guard let packageHTTP = packageResponse as? HTTPURLResponse, (200..<300).contains(packageHTTP.statusCode), packageData.count == entry.size else { throw PatchRemoteSyncError.invalidPatch }
+            let (packageData, packageResponse) = try await session.data(from: entry.downloadUrl)
+            guard let packageHTTP = packageResponse as? HTTPURLResponse, (200..<300).contains(packageHTTP.statusCode), packageData.count == entry.size else { throw PatchRemoteSyncError.invalidPatch(entry.fileName) }
             let summary = try PatchPackageCodec.inspect(packageData)
             guard !summary.isPasswordProtected else { continue }
             let decoded = try PatchPackageCodec.decode(packageData, password: nil)
