@@ -27,9 +27,24 @@ enum PatchRemoteSyncError: LocalizedError {
 enum PatchRemoteSync {
     static let manifestURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/manifest.json")!
     private static let managedKey = "3105.managedRemotePatchFilenames"
+    private static let session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 45
+        configuration.waitsForConnectivity = true
+        configuration.httpAdditionalHeaders = ["Accept": "application/json", "Cache-Control": "no-cache"]
+        return URLSession(configuration: configuration)
+    }()
 
     static func synchronize() async throws -> Int {
-        let (data, response) = try await URLSession.shared.data(from: manifestURL)
+        var request = URLRequest(url: manifestURL)
+        request.httpMethod = "GET"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 30
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { throw PatchRemoteSyncError.unavailable }
         let manifest = try JSONDecoder().decode(RemotePatchManifest.self, from: data)
         guard manifest.schemaVersion == 1 else { throw PatchRemoteSyncError.invalidManifest }
