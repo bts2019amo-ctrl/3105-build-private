@@ -119,6 +119,7 @@ struct PatchProjectsView: View {
             }
             .navigationTitle("Patches")
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("remote-theme-patches")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

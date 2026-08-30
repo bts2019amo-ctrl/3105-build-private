@@ -190,12 +190,14 @@ struct ContentView: View {
                 cleanerEnabled: $cleanerEnabled,
                 wallpapersEnabled: $wallpapersEnabled
             )
+            .accessibilityIdentifier("remote-theme-home")
         case .files:
             AppDataBrowserView(
                 tabSession: filesTabSession
             )
         case .patches:
             GameSelectionView()
+                .accessibilityIdentifier("remote-theme-game-selection")
         case .cleaner:
             CleanerView()
         case .wallpapers:
