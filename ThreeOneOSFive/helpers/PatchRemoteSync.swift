@@ -25,7 +25,7 @@ enum PatchRemoteSyncError: LocalizedError {
 }
 
 enum PatchRemoteSync {
-    static let manifestURL = URL(string: "https://patch-panel-3105.manus.space/api/v1/manifest.json")!
+    static let manifestURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/manifest.json")!
     private static let managedKey = "3105.managedRemotePatchFilenames"
 
     static func synchronize() async throws -> Int {
