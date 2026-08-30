@@ -8,6 +8,7 @@ struct PreLoginPasswordsView: View {
     @State private var selectedCategory: PreLoginPasswordCategory?
     @State private var isShowingVoiceNotice = false
     @State private var isShowingGeneratedPasswords = false
+    @State private var isShowingExportNotice = false
     @State private var isCharging = false
 
     private var filteredCategories: [PreLoginPasswordCategory] {
