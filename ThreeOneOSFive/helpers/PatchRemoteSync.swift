@@ -118,12 +118,15 @@ enum PatchRemoteSync {
             }
             changed += 1
         }
-        let knownRemoteNames = managed
-            .union(categories.keys)
-            .union(kinds.keys)
-            .union(characters.keys)
-            .union(icons.keys)
-        for filename in knownRemoteNames.subtracting(active) {
+        let staleRemoteNames = PatchRemoteRemovalPolicy.staleRemoteNames(
+            managed: managed,
+            categories: categories,
+            kinds: kinds,
+            characters: characters,
+            icons: icons,
+            active: active
+        )
+        for filename in staleRemoteNames {
             try? PatchProjectLibrary.removeManagedPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
@@ -138,7 +141,8 @@ enum PatchRemoteSync {
         UserDefaults.standard.set(kinds, forKey: "3105.managedRemotePatchKinds")
         UserDefaults.standard.set(characters, forKey: "3105.managedRemotePatchCharacters")
         UserDefaults.standard.set(icons, forKey: "3105.managedRemotePatchIcons")
-        UserDefaults.standard.set(Array(removedRemoteNames).sorted(), forKey: "3105.remoteRemovedPatchFilenames")
+        let finalTombstones = PatchRemoteRemovalPolicy.tombstones(existing: removedRemoteNames, stale: staleRemoteNames, active: active)
+        UserDefaults.standard.set(Array(finalTombstones).sorted(), forKey: "3105.remoteRemovedPatchFilenames")
         return changed
     }
 }
