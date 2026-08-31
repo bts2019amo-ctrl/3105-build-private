@@ -72,6 +72,15 @@ jobs:
           done
           plutil -p "$APP/Info.plist"
 
+      - name: Seal executable integrity manifest
+        run: |
+          set -euo pipefail
+          APP=build/Build/Products/Release-iphoneos/3105.app
+          EXEC="$APP/3105"
+          HASH=$(shasum -a 256 "$EXEC" | awk '{print $1}')
+          printf '{"schemaVersion":1,"executableSHA256":"%s"}\n' "$HASH" > "$APP/IntegrityManifest.json"
+          test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["executableSHA256"])' "$APP/IntegrityManifest.json")" = "$HASH"
+
       - name: Package unsigned IPA
         run: |
           set -euo pipefail

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 /// Release-only integrity gate. The private signing key must remain with the Apple
 /// signing/distribution pipeline; it is never embedded in the app.
@@ -17,9 +18,20 @@ enum AppIntegrityGuard {
               FileManager.default.isReadableFile(atPath: executableURL.path) else { return false }
         let infoURL = Bundle.main.bundleURL.appendingPathComponent("Info.plist")
         guard FileManager.default.isReadableFile(atPath: infoURL.path) else { return false }
+        struct IntegrityManifest: Decodable {
+            let schemaVersion: Int
+            let executableSHA256: String
+        }
+        let manifestURL = Bundle.main.bundleURL.appendingPathComponent("IntegrityManifest.json")
+        guard let manifestData = try? Data(contentsOf: manifestURL),
+              let manifest = try? JSONDecoder().decode(IntegrityManifest.self, from: manifestData),
+              manifest.schemaVersion == 1,
+              manifest.executableSHA256.count == 64,
+              let executableData = try? Data(contentsOf: executableURL) else { return false }
+        let actualHash = SHA256.hash(data: executableData).map { String(format: "%02x", $0) }.joined()
+        guard actualHash.caseInsensitiveCompare(manifest.executableSHA256) == .orderedSame else { return false }
         // A distributable iOS app must carry the CodeResources seal after signing;
         // the operating system validates the code signature before launching it.
-
         let codeResources = Bundle.main.bundleURL
             .appendingPathComponent("_CodeSignature", isDirectory: true)
             .appendingPathComponent("CodeResources")
