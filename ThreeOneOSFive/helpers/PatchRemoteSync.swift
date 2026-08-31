@@ -28,12 +28,14 @@ enum PatchRemoteSyncError: LocalizedError {
     case unavailable(statusCode: Int)
     case invalidManifest
     case invalidPatch(String)
+    case restoreFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .unavailable(let statusCode): return "Servidor do catálogo respondeu HTTP \(statusCode)."
         case .invalidManifest: return "O manifesto do catálogo está inválido ou incompatível."
         case .invalidPatch(let fileName): return "O patch \(fileName) não passou na validação de segurança."
+        case .restoreFailed(let fileName): return "Não foi possível restaurar o original antes de remover o patch \(fileName)."
         }
     }
 }
@@ -143,9 +145,13 @@ enum PatchRemoteSync {
         _ = remoteRemovalVerification
         for filename in namesToRemove {
             if let summary = PatchProjectLibrary.packageSummary(named: filename), let receipt = DevicePatchService.latestReceipt(projectID: summary.packageID) {
-                try? DevicePatchService.restore(receipt: receipt)
+                do {
+                    try DevicePatchService.restore(receipt: receipt)
+                } catch {
+                    throw PatchRemoteSyncError.restoreFailed(filename)
+                }
             }
-            try? PatchProjectLibrary.removeLocalPackage(named: filename)
+            try PatchProjectLibrary.removeLocalPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
             kinds.removeValue(forKey: filename)
