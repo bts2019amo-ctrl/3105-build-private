@@ -2,6 +2,14 @@ import SwiftUI
 
 @main
 struct ThreeOneOSFiveApp: App {
+    init() {
+#if !DEBUG && !targetEnvironment(simulator)
+        guard AppIntegrityGuard.isValid else {
+            fatalError("App integrity verification failed")
+        }
+#endif
+    }
+
     @StateObject private var appState = AppState()
     @StateObject private var patchDraftCoordinator = PatchDraftCoordinator()
     @StateObject private var fileOperationCoordinator = FileOperationCoordinator()
