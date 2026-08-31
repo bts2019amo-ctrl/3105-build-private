@@ -138,7 +138,7 @@ enum PatchRemoteSync {
             try PatchProjectLibrary.installImportedPackage(data: packageData, decoded: decoded, summary: summary, existingURL: existing, destinationFilename: entry.fileName)
             managed.insert(entry.fileName)
             categories[entry.fileName] = entry.category
-            kinds[entry.fileName] = ["patch", "skin"].contains(entry.kind) ? entry.kind : "patch"
+            kinds[entry.fileName] = ["patch", "skin", "cache", "avatar"].contains(entry.kind) ? entry.kind : "patch"
             if let character = entry.character, ["dimitri", "alok"].contains(character) { characters[entry.fileName] = character } else { characters.removeValue(forKey: entry.fileName) }
             if let iconURL = entry.iconUrl, iconURL.scheme?.lowercased() == "https" {
                 let (iconData, iconResponse) = try await session.data(from: iconURL)

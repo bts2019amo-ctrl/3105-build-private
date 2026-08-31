@@ -5,8 +5,25 @@ import UniformTypeIdentifiers
 private enum PatchContentKind: String, CaseIterable, Identifiable {
     case patch
     case skin
+    case cache
+    case avatar
     var id: String { rawValue }
-    var title: String { self == .skin ? "Skin" : "Patches" }
+    var title: String {
+        switch self {
+        case .patch: return "Patches"
+        case .skin: return "Skin"
+        case .cache: return "Cache"
+        case .avatar: return "Avatar"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .patch: return "shippingbox"
+        case .skin: return "sparkles"
+        case .cache: return "internaldrive"
+        case .avatar: return "person.crop.circle"
+        }
+    }
 }
 
 private enum SkinCharacter: String, CaseIterable, Identifiable {
@@ -68,7 +85,7 @@ struct PatchProjectsView: View {
     private var selectedItems: [PatchLibraryItem] {
         filteredItems.filter { item in
             guard category(for: item) == selectedTab, (item.remoteKind ?? "patch") == selectedKind.rawValue else { return false }
-            return selectedKind == .patch || item.remoteCharacter == selectedCharacter.rawValue
+            return selectedKind != .skin || item.remoteCharacter == selectedCharacter.rawValue
         }
     }
 
@@ -124,7 +141,7 @@ struct PatchProjectsView: View {
                                     .listRowBackground(Color.clear)
                             }
                         } header: {
-                            sectionHeader(selectedKind == .skin ? "\(selectedTab.title) · \(selectedCharacter.title)" : selectedTab.title)
+                            sectionHeader(selectedKind == .skin ? "\(selectedTab.title) · \(selectedCharacter.title)" : "\(selectedTab.title) · \(selectedKind.title)")
                         }
                     }
                 }
@@ -260,7 +277,7 @@ struct PatchProjectsView: View {
                 Button {
                     withAnimation(.easeOut(duration: 0.18)) { selectedKind = kind; if kind == .skin { selectedCharacter = .dimitri } }
                 } label: {
-                    Label(kind.title, systemImage: kind == .skin ? "sparkles" : "shippingbox")
+                    Label(kind.title, systemImage: kind.icon)
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(selectedKind == kind ? AppTheme.accent : .secondary)
                         .padding(.horizontal, 12)
