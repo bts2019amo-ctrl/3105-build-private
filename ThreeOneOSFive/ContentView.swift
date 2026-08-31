@@ -1,6 +1,27 @@
 import SwiftUI
 import UIKit
 
+struct RemoteAppDisabledView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "pause.circle.fill")
+                .font(.system(size: 56, weight: .semibold))
+                .foregroundStyle(AppTheme.accent)
+            Text("Aplicativo temporariamente indisponível")
+                .font(.title3.weight(.bold))
+                .multilineTextAlignment(.center)
+            Text("O administrador desativou o acesso remotamente. Tente novamente mais tarde.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppBackgroundView().ignoresSafeArea())
+        .accessibilityIdentifier("remote-app-disabled")
+    }
+}
+
 struct ContentView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var appState: AppState
@@ -13,6 +34,7 @@ struct ContentView: View {
     @AppStorage("proxy_access_key") private var proxyAccessKey = ""
     @AppStorage("proxy_key_expires_at") private var proxyKeyExpiresAt = 0.0
     @AppStorage(AppTheme.accentColorStorageKey) private var accentColorHex = AppTheme.defaultAccentHex
+    @AppStorage("3105_remote_app_enabled") private var remoteAppEnabled = true
     @State private var clock = Date()
     @State private var hasPassedPreLogin = false
     @State private var isCharging = false
@@ -40,7 +62,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if appState.isSecurityCompromised {
+            if !remoteAppEnabled {
+                RemoteAppDisabledView()
+            } else if appState.isSecurityCompromised {
                 SecurityBlockedView()
             } else if !isCharging {
                 PreLoginPasswordsView {
@@ -91,7 +115,7 @@ struct ContentView: View {
                 secondsSinceRevalidation += 1
                 secondsSinceThemeRefresh += 1
 
-                if secondsSinceThemeRefresh >= 1 && isCharging && !needsLogin {
+                if secondsSinceThemeRefresh >= 1 {
                     secondsSinceThemeRefresh = 0
                     try? await PatchRemoteSync.synchronizeTheme()
                 }

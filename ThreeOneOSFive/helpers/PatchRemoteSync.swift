@@ -4,6 +4,9 @@ struct RemotePatchManifest: Decodable {
     struct Theme: Decodable {
         let accentColor: String
     }
+    struct AppStatus: Decodable {
+        let enabled: Bool
+    }
     struct Entry: Decodable {
         let id: Int
         let name: String
@@ -20,6 +23,7 @@ struct RemotePatchManifest: Decodable {
     let schemaVersion: Int
     let revision: String
     let theme: Theme?
+    let app: AppStatus?
     let revocations: [String]?
     let patches: [Entry]
 }
@@ -64,10 +68,11 @@ enum PatchRemoteSync {
         request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
-        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String }
+        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String; let app: AppStatus? }
         let theme = try JSONDecoder().decode(ThemeResponse.self, from: data)
         guard theme.schemaVersion == 1, theme.accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil else { return }
         UserDefaults.standard.set(theme.accentColor.uppercased(), forKey: "3105_accent_color_hex")
+        UserDefaults.standard.set(theme.app?.enabled ?? true, forKey: "3105_remote_app_enabled")
     }
 
     static func synchronize() async throws -> Int {
@@ -87,6 +92,7 @@ enum PatchRemoteSync {
         if let accentColor = manifest.theme?.accentColor, accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil {
             UserDefaults.standard.set(accentColor.uppercased(), forKey: "3105_accent_color_hex")
         }
+        UserDefaults.standard.set(manifest.app?.enabled ?? true, forKey: "3105_remote_app_enabled")
         var managed = Set(UserDefaults.standard.stringArray(forKey: managedKey) ?? [])
         var active = Set<String>()
         var categories = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCategories") as? [String: String] ?? [:]
