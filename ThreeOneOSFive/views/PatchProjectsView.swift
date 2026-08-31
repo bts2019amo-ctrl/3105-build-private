@@ -57,6 +57,7 @@ struct PatchProjectsView: View {
     @AppStorage(AppTheme.accentColorStorageKey) private var accentColorHex = AppTheme.defaultAccentHex
     @State private var selectedTab: GamePatchVersion
     @State private var selectedKind: PatchContentKind = .patch
+    @State private var isShowingKindList = false
     @State private var selectedCharacter: SkinCharacter = .dimitri
     let gameFilter: GamePatchVersion?
 
@@ -110,8 +111,12 @@ struct PatchProjectsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 categoryTabs
-                kindTabs
-                if selectedKind == .skin { characterTabs }
+                if isShowingKindList {
+                    activeKindHeader
+                } else {
+                    kindTabs
+                }
+                if isShowingKindList && selectedKind == .skin { characterTabs }
                 accentColorRow
                 AppSearchField(
                     text: $searchText,
@@ -119,7 +124,8 @@ struct PatchProjectsView: View {
                     clearLabel: language.text("common.clear")
                 )
                 Divider()
-                List {
+                if isShowingKindList {
+                    List {
                     if store.items.isEmpty && !store.isBusy {
                         emptyState
                             .listRowSeparator(.hidden)
@@ -147,7 +153,10 @@ struct PatchProjectsView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
-                .background(Color.clear)
+                    .background(Color.clear)
+                } else {
+                    kindLandingState
+                }
             }
             .accessibilityIdentifier("patch-list-no-swipe-delete")
             .accessibilityValue(SkinCharacter.listBehaviorVerification)
@@ -271,6 +280,51 @@ struct PatchProjectsView: View {
         .background(Color.black.opacity(0.08))
     }
 
+    private var activeKindHeader: some View {
+        HStack(spacing: 12) {
+            Button {
+                withAnimation(.easeOut(duration: 0.18)) { isShowingKindList = false }
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.headline.weight(.bold))
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.08), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Voltar para tipos de patch")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(selectedKind.title)
+                    .font(.headline.weight(.bold))
+                Text("Lista de patches selecionados")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .foregroundStyle(AppTheme.accent)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .accessibilityIdentifier("patch-opened-list-header")
+    }
+
+    private var kindLandingState: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "square.grid.2x2.fill")
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(AppTheme.accent)
+            Text("Escolha uma opção dentro de Patches")
+                .font(.headline.weight(.bold))
+                .multilineTextAlignment(.center)
+            Text("Toque em Patches, Skin, Cache ou Avatar para abrir a lista correspondente.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(28)
+        .accessibilityIdentifier("patch-kind-landing")
+    }
+
     private var kindTabs: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Escolha o tipo dentro de Patches")
@@ -282,7 +336,8 @@ struct PatchProjectsView: View {
                     Button {
                         withAnimation(.easeOut(duration: 0.18)) {
                             selectedKind = kind
-                            if kind == .skin { selectedCharacter = .dimitri }
+                                isShowingKindList = true
+                                if kind == .skin { selectedCharacter = .dimitri }
                         }
                     } label: {
                         HStack(spacing: 8) {
