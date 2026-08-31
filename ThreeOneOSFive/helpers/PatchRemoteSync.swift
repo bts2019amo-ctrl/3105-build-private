@@ -68,7 +68,7 @@ enum PatchRemoteSync {
         request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
-        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String; let app: AppStatus? }
+        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String; let app: RemotePatchManifest.AppStatus? }
         let theme = try JSONDecoder().decode(ThemeResponse.self, from: data)
         guard theme.schemaVersion == 1, theme.accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil else { return }
         UserDefaults.standard.set(theme.accentColor.uppercased(), forKey: "3105_accent_color_hex")
