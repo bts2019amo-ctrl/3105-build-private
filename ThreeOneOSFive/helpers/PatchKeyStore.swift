@@ -76,7 +76,7 @@ enum PatchKeyStore {
             kSecAttrService as String: service
         ]
         let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
+        if status != errSecSuccess && status != errSecItemNotFound {
             log("patch: total reset keychain cleanup failed with status \(status)")
         }
     }
