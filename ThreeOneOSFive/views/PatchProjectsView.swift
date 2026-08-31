@@ -272,24 +272,38 @@ struct PatchProjectsView: View {
     }
 
     private var kindTabs: some View {
-        HStack(spacing: 10) {
-            ForEach(PatchContentKind.allCases) { kind in
-                Button {
-                    withAnimation(.easeOut(duration: 0.18)) { selectedKind = kind; if kind == .skin { selectedCharacter = .dimitri } }
-                } label: {
-                    Label(kind.title, systemImage: kind.icon)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(selectedKind == kind ? AppTheme.accent : .secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(selectedKind == kind ? AppTheme.accent.opacity(0.16) : Color.white.opacity(0.06), in: Capsule())
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Tipo de patch")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(PatchContentKind.allCases) { kind in
+                        Button {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                selectedKind = kind
+                                if kind == .skin { selectedCharacter = .dimitri }
+                            }
+                        } label: {
+                            Label(kind.title, systemImage: kind.icon)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(selectedKind == kind ? AppTheme.accent : .secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(selectedKind == kind ? AppTheme.accent.opacity(0.16) : Color.white.opacity(0.06), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selectedKind == kind ? .isSelected : [])
+                        .accessibilityLabel("Tipo de patch: \(kind.title)")
+                        .accessibilityIdentifier("patch-kind-\(kind.rawValue)")
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selectedKind == kind ? .isSelected : [])
+                .padding(.horizontal, 16)
             }
-            Spacer()
         }
-        .padding(.horizontal, 16)
+        .accessibilityIdentifier("patch-content-kind-tabs")
+        .accessibilityValue("Selecionado: \(selectedKind.title)")
         .padding(.bottom, 8)
     }
 
