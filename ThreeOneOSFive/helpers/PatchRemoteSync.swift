@@ -96,8 +96,26 @@ enum PatchRemoteSync {
         var removedRemoteNames = Set(UserDefaults.standard.stringArray(forKey: "3105.remoteRemovedPatchFilenames") ?? [])
         var changed = 0
         let activeRemoteNames = Set(manifest.patches.map(\.fileName))
-        for filename in Set(manifest.revocations ?? []).subtracting(activeRemoteNames) {
-            try? PatchProjectLibrary.removeManagedPackage(named: filename)
+        let staleRemoteNames = PatchRemoteRemovalPolicy.staleRemoteNames(
+            managed: managed,
+            categories: categories,
+            kinds: kinds,
+            characters: characters,
+            icons: icons,
+            active: activeRemoteNames
+        )
+        let localNamesToRemove = PatchProjectLibrary.localPackageFilenames().subtracting(activeRemoteNames)
+        let namesToRemove = staleRemoteNames.union(localNamesToRemove)
+        _ = remoteRemovalVerification
+        for filename in Set(manifest.revocations ?? []).subtracting(activeRemoteNames).union(namesToRemove) {
+            if let summary = PatchProjectLibrary.packageSummary(named: filename), let receipt = DevicePatchService.latestReceipt(projectID: summary.packageID) {
+                do {
+                    try DevicePatchService.restore(receipt: receipt)
+                } catch {
+                    throw PatchRemoteSyncError.restoreFailed(filename)
+                }
+            }
+            try PatchProjectLibrary.removeLocalPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
             kinds.removeValue(forKey: filename)
@@ -130,34 +148,6 @@ enum PatchRemoteSync {
                     icons[entry.fileName] = iconURL.path
                 }
             }
-            changed += 1
-        }
-        let staleRemoteNames = PatchRemoteRemovalPolicy.staleRemoteNames(
-            managed: managed,
-            categories: categories,
-            kinds: kinds,
-            characters: characters,
-            icons: icons,
-            active: active
-        )
-        let localNamesToRemove = PatchProjectLibrary.localPackageFilenames().subtracting(activeRemoteNames)
-        let namesToRemove = staleRemoteNames.union(localNamesToRemove)
-        _ = remoteRemovalVerification
-        for filename in namesToRemove {
-            if let summary = PatchProjectLibrary.packageSummary(named: filename), let receipt = DevicePatchService.latestReceipt(projectID: summary.packageID) {
-                do {
-                    try DevicePatchService.restore(receipt: receipt)
-                } catch {
-                    throw PatchRemoteSyncError.restoreFailed(filename)
-                }
-            }
-            try PatchProjectLibrary.removeLocalPackage(named: filename)
-            managed.remove(filename)
-            categories.removeValue(forKey: filename)
-            kinds.removeValue(forKey: filename)
-            removedRemoteNames.insert(filename)
-            characters.removeValue(forKey: filename)
-            if let iconPath = icons.removeValue(forKey: filename) { PatchProjectLibrary.removeRemoteIcon(named: URL(fileURLWithPath: iconPath).lastPathComponent) }
             changed += 1
         }
         UserDefaults.standard.set(Array(managed).sorted(), forKey: managedKey)

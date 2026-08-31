@@ -125,6 +125,7 @@ final class PatchProjectStore: ObservableObject {
 
     private func failRemoteSync(_ error: Error) {
         isSyncing = false
+        reloadInBackground()
         let detail = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         alert = PatchStoreAlert(
             titleKey: "common.failed",
