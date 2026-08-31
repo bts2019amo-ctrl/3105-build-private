@@ -97,8 +97,10 @@ enum PatchProjectLibrary {
 
     private static func installBundledPackagesIfNeeded(fileManager: FileManager) {
         guard let root = try? packageRootURL(fileManager: fileManager) else { return }
+        let removedRemoteNames = Set(UserDefaults.standard.stringArray(forKey: "3105.remoteRemovedPatchFilenames") ?? [])
         let bundledURLs = Bundle.main.urls(forResourcesWithExtension: "3105", subdirectory: "Patches") ?? []
         for sourceURL in bundledURLs {
+            guard !removedRemoteNames.contains(sourceURL.lastPathComponent) else { continue }
             let destination = root.appendingPathComponent(sourceURL.lastPathComponent)
             guard !fileManager.fileExists(atPath: destination.path) else { continue }
             do {

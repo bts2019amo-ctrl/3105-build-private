@@ -38,6 +38,7 @@ enum PatchRemoteSyncError: LocalizedError {
 }
 
 enum PatchRemoteSync {
+    static let remoteRemovalVerification = "REMOTE_REMOVAL_TOMBSTONE|BUNDLED_REINSTALL_BLOCKED"
     static let manifestURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/manifest.json")!
     static let themeURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/theme.json")!
     private static let managedKey = "3105.managedRemotePatchFilenames"
@@ -89,10 +90,12 @@ enum PatchRemoteSync {
         var kinds = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchKinds") as? [String: String] ?? [:]
         var characters = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchCharacters") as? [String: String] ?? [:]
         var icons = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchIcons") as? [String: String] ?? [:]
+        var removedRemoteNames = Set(UserDefaults.standard.stringArray(forKey: "3105.remoteRemovedPatchFilenames") ?? [])
         var changed = 0
         for entry in manifest.patches {
             guard ["normal", "max"].contains(entry.category), entry.downloadUrl.scheme?.lowercased() == "https", entry.downloadUrl.user == nil, entry.downloadUrl.password == nil, entry.fileName.lowercased().hasSuffix(".3105") else { throw PatchRemoteSyncError.invalidPatch(entry.fileName) }
             active.insert(entry.fileName)
+            removedRemoteNames.remove(entry.fileName)
             let (packageData, packageResponse) = try await session.data(from: entry.downloadUrl)
             guard let packageHTTP = packageResponse as? HTTPURLResponse, (200..<300).contains(packageHTTP.statusCode), packageData.count == entry.size else { throw PatchRemoteSyncError.invalidPatch(entry.fileName) }
             let summary = try PatchPackageCodec.inspect(packageData)
@@ -115,11 +118,17 @@ enum PatchRemoteSync {
             }
             changed += 1
         }
-        for filename in managed.subtracting(active) {
+        let knownRemoteNames = managed
+            .union(categories.keys)
+            .union(kinds.keys)
+            .union(characters.keys)
+            .union(icons.keys)
+        for filename in knownRemoteNames.subtracting(active) {
             try? PatchProjectLibrary.removeManagedPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
             kinds.removeValue(forKey: filename)
+            removedRemoteNames.insert(filename)
             characters.removeValue(forKey: filename)
             if let iconPath = icons.removeValue(forKey: filename) { PatchProjectLibrary.removeRemoteIcon(named: URL(fileURLWithPath: iconPath).lastPathComponent) }
             changed += 1
@@ -129,6 +138,7 @@ enum PatchRemoteSync {
         UserDefaults.standard.set(kinds, forKey: "3105.managedRemotePatchKinds")
         UserDefaults.standard.set(characters, forKey: "3105.managedRemotePatchCharacters")
         UserDefaults.standard.set(icons, forKey: "3105.managedRemotePatchIcons")
+        UserDefaults.standard.set(Array(removedRemoteNames).sorted(), forKey: "3105.remoteRemovedPatchFilenames")
         return changed
     }
 }
