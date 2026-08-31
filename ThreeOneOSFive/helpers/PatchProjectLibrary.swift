@@ -230,6 +230,13 @@ enum PatchProjectLibrary {
         if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
     }
 
+    static func packageSummary(named filename: String, fileManager: FileManager = .default) -> PatchPackageSummary? {
+        guard let root = try? packageRootURL(fileManager: fileManager), !filename.contains("/") else { return nil }
+        let url = root.appendingPathComponent(filename)
+        guard url.pathExtension.lowercased() == "3105", let data = try? readPackage(at: url) else { return nil }
+        return try? PatchPackageCodec.inspect(data)
+    }
+
     static func removeLocalPackage(named filename: String, fileManager: FileManager = .default) throws {
         let root = try packageRootURL(fileManager: fileManager)
         let url = root.appendingPathComponent(filename)

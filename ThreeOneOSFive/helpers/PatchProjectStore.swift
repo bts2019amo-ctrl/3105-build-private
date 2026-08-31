@@ -77,6 +77,9 @@ final class PatchProjectStore: ObservableObject {
         withAnimation(.easeOut(duration: 0.22)) {
             items = state.items
         }
+        let availableIDs = Set(state.items.map(\.id))
+        activePatchIDs = activePatchIDs.intersection(availableIDs)
+        isApplyingPatchIDs = isApplyingPatchIDs.intersection(availableIDs)
         isLoading = false
         if pendingLocalReload && isApplyingPatchIDs.isEmpty {
             pendingLocalReload = false

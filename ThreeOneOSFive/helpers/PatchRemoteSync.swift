@@ -142,6 +142,9 @@ enum PatchRemoteSync {
         let namesToRemove = staleRemoteNames.union(localNamesToRemove)
         _ = remoteRemovalVerification
         for filename in namesToRemove {
+            if let summary = PatchProjectLibrary.packageSummary(named: filename), let receipt = DevicePatchService.latestReceipt(projectID: summary.packageID) {
+                try? DevicePatchService.restore(receipt: receipt)
+            }
             try? PatchProjectLibrary.removeLocalPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
