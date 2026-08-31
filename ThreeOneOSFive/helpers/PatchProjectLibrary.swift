@@ -23,6 +23,48 @@ struct PatchPasswordRequest: Identifiable {
 }
 
 enum PatchProjectLibrary {
+    private static let totalResetMarker = "3105.totalPatchReset.2026-08-31"
+
+    /// Clears patch-only local state once after the catalog reset. License/session data is preserved.
+    static func performTotalPatchResetIfNeeded(fileManager: FileManager = .default) {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: totalResetMarker) else { return }
+        do {
+            let applicationSupport = try fileManager.url(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: false
+            )
+            for directory in ["PatchProjects", "PatchWorkspace"] {
+                let url = applicationSupport.appendingPathComponent(directory, isDirectory: true)
+                if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
+            }
+        } catch {
+            log("patch: total reset storage cleanup failed: \(error.localizedDescription)")
+        }
+        if let documents = try? fileManager.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        ) {
+            let legacyPatches = documents.appendingPathComponent("Patches", isDirectory: true)
+            try? fileManager.removeItem(at: legacyPatches)
+        }
+        PatchKeyStore.deleteAll()
+        [
+            "3105.managedRemotePatchFilenames",
+            "3105.managedRemotePatchCategories",
+            "3105.managedRemotePatchKinds",
+            "3105.managedRemotePatchCharacters",
+            "3105.managedRemotePatchIcons",
+            "3105.remoteRemovedPatchFilenames",
+            "3105_accent_color_hex"
+        ].forEach(defaults.removeObject(forKey:))
+        defaults.set(true, forKey: totalResetMarker)
+    }
+
     static func packageRootURL(fileManager: FileManager = .default) throws -> URL {
         let base = try fileManager.url(
             for: .applicationSupportDirectory,
@@ -43,6 +85,7 @@ enum PatchProjectLibrary {
     }
 
     static func load(fileManager: FileManager = .default) -> [PatchLibraryItem] {
+        performTotalPatchResetIfNeeded(fileManager: fileManager)
         installBundledPackagesIfNeeded(fileManager: fileManager)
         guard let root = try? packageRootURL(fileManager: fileManager),
               let urls = try? fileManager.contentsOfDirectory(

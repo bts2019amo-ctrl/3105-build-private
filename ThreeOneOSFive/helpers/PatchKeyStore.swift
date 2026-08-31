@@ -69,4 +69,15 @@ enum PatchKeyStore {
             throw PatchPackageError.keychainFailed
         }
     }
+
+    static func deleteAll() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ]
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            log("patch: total reset keychain cleanup failed with status \(status)")
+        }
+    }
 }
