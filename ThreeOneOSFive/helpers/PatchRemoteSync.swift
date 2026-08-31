@@ -20,6 +20,7 @@ struct RemotePatchManifest: Decodable {
     let schemaVersion: Int
     let revision: String
     let theme: Theme?
+    let revocations: [String]?
     let patches: [Entry]
 }
 
@@ -92,6 +93,17 @@ enum PatchRemoteSync {
         var icons = UserDefaults.standard.dictionary(forKey: "3105.managedRemotePatchIcons") as? [String: String] ?? [:]
         var removedRemoteNames = Set(UserDefaults.standard.stringArray(forKey: "3105.remoteRemovedPatchFilenames") ?? [])
         var changed = 0
+        let activeRemoteNames = Set(manifest.patches.map(\.fileName))
+        for filename in Set(manifest.revocations ?? []).subtracting(activeRemoteNames) {
+            try? PatchProjectLibrary.removeManagedPackage(named: filename)
+            managed.remove(filename)
+            categories.removeValue(forKey: filename)
+            kinds.removeValue(forKey: filename)
+            characters.removeValue(forKey: filename)
+            if let iconPath = icons.removeValue(forKey: filename) { PatchProjectLibrary.removeRemoteIcon(named: URL(fileURLWithPath: iconPath).lastPathComponent) }
+            removedRemoteNames.insert(filename)
+            changed += 1
+        }
         for entry in manifest.patches {
             guard ["normal", "max"].contains(entry.category), entry.downloadUrl.scheme?.lowercased() == "https", entry.downloadUrl.user == nil, entry.downloadUrl.password == nil, entry.fileName.lowercased().hasSuffix(".3105") else { throw PatchRemoteSyncError.invalidPatch(entry.fileName) }
             active.insert(entry.fileName)
