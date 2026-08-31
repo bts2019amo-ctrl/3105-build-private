@@ -272,38 +272,44 @@ struct PatchProjectsView: View {
     }
 
     private var kindTabs: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Tipo de patch")
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Escolha o tipo dentro de Patches")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(PatchContentKind.allCases) { kind in
-                        Button {
-                            withAnimation(.easeOut(duration: 0.18)) {
-                                selectedKind = kind
-                                if kind == .skin { selectedCharacter = .dimitri }
-                            }
-                        } label: {
-                            Label(kind.title, systemImage: kind.icon)
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                                .foregroundStyle(selectedKind == kind ? AppTheme.accent : .secondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(selectedKind == kind ? AppTheme.accent.opacity(0.16) : Color.white.opacity(0.06), in: Capsule())
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(PatchContentKind.allCases) { kind in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            selectedKind = kind
+                            if kind == .skin { selectedCharacter = .dimitri }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(selectedKind == kind ? .isSelected : [])
-                        .accessibilityLabel("Tipo de patch: \(kind.title)")
-                        .accessibilityIdentifier("patch-kind-\(kind.rawValue)")
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: kind.icon)
+                            Text(kind.title)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                            Spacer(minLength: 0)
+                            Image(systemName: selectedKind == kind ? "checkmark.circle.fill" : "chevron.right")
+                                .font(.caption.weight(.bold))
+                        }
+                        .foregroundStyle(selectedKind == kind ? AppTheme.accent : .secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(selectedKind == kind ? AppTheme.accent.opacity(0.16) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(selectedKind == kind ? AppTheme.accent.opacity(0.45) : Color.white.opacity(0.08), lineWidth: 1))
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selectedKind == kind ? .isSelected : [])
+                    .accessibilityLabel("Selecionar tipo de patch: \(kind.title)")
+                    .accessibilityIdentifier("patch-kind-\(kind.rawValue)")
                 }
-                .padding(.horizontal, 16)
             }
+            .padding(.horizontal, 16)
         }
         .accessibilityIdentifier("patch-content-kind-tabs")
-        .accessibilityValue("Selecionado: \(selectedKind.title)")
+        .accessibilityValue("Selecionado: \(selectedKind.title). A lista aparece abaixo")
         .padding(.bottom, 8)
     }
 
