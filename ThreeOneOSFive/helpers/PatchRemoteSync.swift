@@ -39,7 +39,7 @@ enum PatchRemoteSyncError: LocalizedError {
 }
 
 enum PatchRemoteSync {
-    static let remoteRemovalVerification = "REMOTE_REMOVAL_TOMBSTONE|BUNDLED_REINSTALL_BLOCKED"
+    static let remoteRemovalVerification = "REMOTE_REMOVAL_TOMBSTONE|BUNDLED_REINSTALL_BLOCKED|REMOVE_ALL_UNPUBLISHED_PATCHES"
     static let manifestURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/manifest.json")!
     static let themeURL = URL(string: "https://patch3105-zrifekat.manus.space/api/v1/theme.json")!
     private static let managedKey = "3105.managedRemotePatchFilenames"
@@ -138,8 +138,11 @@ enum PatchRemoteSync {
             icons: icons,
             active: active
         )
-        for filename in staleRemoteNames {
-            try? PatchProjectLibrary.removeManagedPackage(named: filename)
+        let localNamesToRemove = PatchProjectLibrary.localPackageFilenames().subtracting(activeRemoteNames)
+        let namesToRemove = staleRemoteNames.union(localNamesToRemove)
+        _ = remoteRemovalVerification
+        for filename in namesToRemove {
+            try? PatchProjectLibrary.removeLocalPackage(named: filename)
             managed.remove(filename)
             categories.removeValue(forKey: filename)
             kinds.removeValue(forKey: filename)
@@ -153,7 +156,7 @@ enum PatchRemoteSync {
         UserDefaults.standard.set(kinds, forKey: "3105.managedRemotePatchKinds")
         UserDefaults.standard.set(characters, forKey: "3105.managedRemotePatchCharacters")
         UserDefaults.standard.set(icons, forKey: "3105.managedRemotePatchIcons")
-        let finalTombstones = PatchRemoteRemovalPolicy.tombstones(existing: removedRemoteNames, stale: staleRemoteNames, active: active)
+        let finalTombstones = PatchRemoteRemovalPolicy.tombstones(existing: removedRemoteNames, stale: namesToRemove, active: activeRemoteNames)
         UserDefaults.standard.set(Array(finalTombstones).sorted(), forKey: "3105.remoteRemovedPatchFilenames")
         return changed
     }

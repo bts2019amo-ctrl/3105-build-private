@@ -217,10 +217,27 @@ enum PatchProjectLibrary {
         }
     }
 
+    static func localPackageFilenames(fileManager: FileManager = .default) -> Set<String> {
+        guard let root = try? packageRootURL(fileManager: fileManager),
+              let urls = try? fileManager.contentsOfDirectory(at: root, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) else { return [] }
+        return Set(urls.filter { $0.pathExtension.lowercased() == "3105" }.map(\.lastPathComponent))
+    }
+
     static func removeManagedPackage(named filename: String, fileManager: FileManager = .default) throws {
         let root = try packageRootURL(fileManager: fileManager)
         let url = root.appendingPathComponent(filename)
         guard url.pathExtension.lowercased() == "3105", !filename.contains("/") else { return }
+        if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
+    }
+
+    static func removeLocalPackage(named filename: String, fileManager: FileManager = .default) throws {
+        let root = try packageRootURL(fileManager: fileManager)
+        let url = root.appendingPathComponent(filename)
+        guard url.pathExtension.lowercased() == "3105", !filename.contains("/") else { return }
+        if let data = try? readPackage(at: url), let summary = try? PatchPackageCodec.inspect(data) {
+            try? PatchWorkspaceService.deleteWorkspace(projectID: summary.packageID, fileManager: fileManager)
+            try? PatchKeyStore.delete(for: summary)
+        }
         if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
     }
 
