@@ -43,19 +43,29 @@ enum AppTheme {
 struct AppBackgroundView: View {
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color.black.opacity(0.80), AppTheme.accent.opacity(0.28), Color.black.opacity(0.60)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            
+            Image("threeone_dark_wallpaper")
+                .resizable()
+                .scaledToFill()
                 .ignoresSafeArea()
-            
-            Circle().fill(AppTheme.accent.opacity(0.30)).frame(width: 260, height: 260).blur(radius: 55).offset(x: 150, y: -260)
-            Circle().fill(AppTheme.accent.opacity(0.20)).frame(width: 300, height: 300).blur(radius: 70).offset(x: -150, y: 270)
-            
-            Color.black.opacity(0.08).ignoresSafeArea()
-            
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.52),
+                    Color.black.opacity(0.28),
+                    AppTheme.accent.opacity(0.10),
+                    Color.black.opacity(0.48)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            Rectangle()
+                .fill(.ultraThinMaterial.opacity(0.12))
+                .ignoresSafeArea()
         }
-        
+        .clipped()
         .allowsHitTesting(false)
-        
     }
     
 }
