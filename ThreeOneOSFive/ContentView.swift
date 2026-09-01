@@ -350,8 +350,12 @@ private struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+            ZStack {
+                AppBackgroundView()
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
                     Text("INFORMAÇÕES DA LICENÇA")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
@@ -399,10 +403,11 @@ private struct DashboardView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
-                .padding(.bottom, 24)
+                    .padding(.bottom, 24)
+                }
+                .scrollIndicators(.hidden)
+                .background(Color.clear)
             }
-            .scrollIndicators(.hidden)
-            .background(Color.black.ignoresSafeArea())
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
         }

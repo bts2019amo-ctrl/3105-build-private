@@ -109,8 +109,12 @@ struct PatchProjectsView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                categoryTabs
+            ZStack {
+                AppBackgroundView()
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    categoryTabs
                 if isShowingKindList {
                     activeKindHeader
                 } else {
@@ -157,11 +161,14 @@ struct PatchProjectsView: View {
                 } else {
                     kindLandingState
                 }
+                }
+                .background(Color.clear)
             }
             .accessibilityIdentifier("patch-list-no-swipe-delete")
             .accessibilityValue(SkinCharacter.listBehaviorVerification)
             .navigationTitle("Patches")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .accessibilityIdentifier("remote-theme-patches")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

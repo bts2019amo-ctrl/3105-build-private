@@ -140,7 +140,10 @@ struct GameSelectionView: View {
 
             }
 
-            .background(Color.clear)
+            .background {
+                AppBackgroundView()
+                    .ignoresSafeArea()
+            }
 
             .navigationTitle("HS")
 
@@ -149,6 +152,7 @@ struct GameSelectionView: View {
             .preferredColorScheme(.dark)
 
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
 
         }
 
