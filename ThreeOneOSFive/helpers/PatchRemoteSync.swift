@@ -3,6 +3,7 @@ import Foundation
 struct RemotePatchManifest: Decodable {
     struct Theme: Decodable {
         let accentColor: String
+        let wallpaperUrl: URL?
     }
     struct AppStatus: Decodable {
         let enabled: Bool
@@ -68,10 +69,15 @@ enum PatchRemoteSync {
         request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
-        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String; let app: RemotePatchManifest.AppStatus? }
+        struct ThemeResponse: Decodable { let schemaVersion: Int; let accentColor: String; let wallpaperUrl: URL?; let app: RemotePatchManifest.AppStatus? }
         let theme = try JSONDecoder().decode(ThemeResponse.self, from: data)
         guard theme.schemaVersion == 1, theme.accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil else { return }
         UserDefaults.standard.set(theme.accentColor.uppercased(), forKey: "3105_accent_color_hex")
+        if let wallpaperUrl = theme.wallpaperUrl, wallpaperUrl.scheme?.lowercased() == "https", wallpaperUrl.user == nil, wallpaperUrl.password == nil {
+            UserDefaults.standard.set(wallpaperUrl.absoluteString, forKey: "3105_remote_wallpaper_url")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "3105_remote_wallpaper_url")
+        }
         UserDefaults.standard.set(theme.app?.enabled ?? true, forKey: "3105_remote_app_enabled")
     }
 
@@ -91,6 +97,11 @@ enum PatchRemoteSync {
         guard manifest.schemaVersion == 1 else { throw PatchRemoteSyncError.invalidManifest }
         if let accentColor = manifest.theme?.accentColor, accentColor.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil {
             UserDefaults.standard.set(accentColor.uppercased(), forKey: "3105_accent_color_hex")
+        }
+        if let wallpaperUrl = manifest.theme?.wallpaperUrl, wallpaperUrl.scheme?.lowercased() == "https", wallpaperUrl.user == nil, wallpaperUrl.password == nil {
+            UserDefaults.standard.set(wallpaperUrl.absoluteString, forKey: "3105_remote_wallpaper_url")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "3105_remote_wallpaper_url")
         }
         UserDefaults.standard.set(manifest.app?.enabled ?? true, forKey: "3105_remote_app_enabled")
         var managed = Set(UserDefaults.standard.stringArray(forKey: managedKey) ?? [])

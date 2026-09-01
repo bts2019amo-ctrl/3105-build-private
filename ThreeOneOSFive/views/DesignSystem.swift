@@ -41,11 +41,11 @@ enum AppTheme {
 
 
 struct AppBackgroundView: View {
+    @AppStorage("3105_remote_wallpaper_url") private var remoteWallpaperURL = ""
+
     var body: some View {
         ZStack {
-            Image("threeone_dark_wallpaper")
-                .resizable()
-                .scaledToFill()
+            wallpaperLayer
                 .ignoresSafeArea()
 
             LinearGradient(
@@ -66,6 +66,21 @@ struct AppBackgroundView: View {
         }
         .clipped()
         .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private var wallpaperLayer: some View {
+        if let url = URL(string: remoteWallpaperURL), url.scheme?.lowercased() == "https", url.user == nil, url.password == nil {
+            AsyncImage(url: url, transaction: Transaction(animation: .easeInOut(duration: 0.2))) { phase in
+                if case .success(let image) = phase {
+                    image.resizable().scaledToFill()
+                } else {
+                    Image("threeone_dark_wallpaper").resizable().scaledToFill()
+                }
+            }
+        } else {
+            Image("threeone_dark_wallpaper").resizable().scaledToFill()
+        }
     }
     
 }
