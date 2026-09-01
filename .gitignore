@@ -42,3 +42,6 @@ DerivedData/
 *.tmp
 *.swp
 *~
+
+# Patches are distributed exclusively by the remote catalog
+*.3105
