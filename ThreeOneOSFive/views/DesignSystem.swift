@@ -75,11 +75,13 @@ struct AppBackgroundView: View {
                 if case .success(let image) = phase {
                     image.resizable().scaledToFill()
                 } else {
-                    Image("threeone_dark_wallpaper").resizable().scaledToFill()
+                    Color.clear
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            Image("threeone_dark_wallpaper").resizable().scaledToFill()
+            Color.clear
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
     
